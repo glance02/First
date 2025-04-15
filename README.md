@@ -32,7 +32,7 @@ git rebase master
 ```bash
 git rebase -i HEAD~3
 ```
-显示当前分支的前3条git记录。
+显示当前分支的前3条git记录:
 ![](pic/2025-04-15-23-28-46.png)
 
 *常用操作指令*：
