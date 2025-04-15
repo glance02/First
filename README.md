@@ -21,7 +21,7 @@
     git checkout master
     git merge develop
    ```
-   
+
 6. 将代码推送到GitHub：
 `git push origin master`
 
@@ -49,6 +49,7 @@ git rebase master
 git rebase -i HEAD~3
 ```
 显示当前分支的前3条git记录:
+
 ![](pic/2025-04-15-23-28-46.png)
 
 *常用操作指令*：
