@@ -1,12 +1,28 @@
 # Git学习
 ## 初始操作
 1. 创建本地仓库和远程仓库，并将两个仓库连接起来：
-   `git init  #初始化`
-   `git remote add origin ssh连接`
-   一般情况下，git中自动创建一个master分支，如果需要在此基础上更新代码，则可以使用：`git checkout -b develop`来创建一个名为develop（可以任意命名此分支）的分支，更新代码。
-2. 更新完成之后使用 `git add .`将所有代码添加到暂存区，然后使用 `git commit -m "注释"`完成一次代码提交
-3. 使用命令 `git checkout master`切换回master分支，然后输入：`git merge develop`完成代码合并
-4. 将代码推送到GitHub：
+   ```bash
+   git init  #初始化`
+   git remote add origin ssh连接
+   ```
+   一般情况下，git中自动创建一个master分支。
+2. 创建一个名为develop（可以任意命名此分支）的分支，更新代码。
+   `git checkout -b develop`
+   可以再此分支上对代码进行修改。
+
+4. 更新完成之后,输入如下代码完成一次代码提交
+    ```bash
+   git add . #将所有代码添加到暂存区，然后使用 `
+   git commit -m "注释"
+    ```
+    
+5. 使用命令切换回master分支，然后完成代码合并
+   ```bash
+    git checkout master
+    git merge develop
+   ```
+   
+6. 将代码推送到GitHub：
 `git push origin master`
 
 ## 笔记
