@@ -105,6 +105,6 @@ sdadasda
 - zt，将当前行移动到屏幕的顶部
 - zb，将当前行移动到屏幕的底部
 
-### EastMoiton移动
+### EasyMoiton移动
 - \\fa,找到a，之后再输入对应字母，就能直接跳转了
 
