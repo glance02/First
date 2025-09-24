@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MusicMate - 演奏界面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .song-info {
+            font-size: 1rem;
+        }
+        
+        .song-title {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        
+        .song-artist {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        
+        .record-btn {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .performance-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .progress-section {
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 35%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .chord-display {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .current-chord {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .chord-type {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+        
+        .next-chords {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .next-chord {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .chord-buttons {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .chord-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .chord-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+        
+        .chord-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .chord-btn.active {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.4);
+            animation: pulse 0.5s ease-out;
+        }
+        
+        .chord-name {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+        
+        .chord-detail {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .control-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+        
+        .play-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+        
+        .mode-selector {
+            background: rgba(255,255,255,0.05);
+            border-radius: 25px;
+            padding: 5px;
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        .lyrics-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .lyrics-text {
+            font-size: 1.1rem;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+        
+        .metronome {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .metronome-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .metronome-btn.active {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+        
+        .beat-indicator {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .beat-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transition: all 0.2s ease;
+        }
+        
+        .beat-dot.active {
+            background: #f093fb;
+            transform: scale(1.3);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+        }
+        
+        .chord-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 20px;
+            background: inherit;
+            opacity: 0;
+            transform: scale(1);
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <button class="back-btn">←</button>
+            <div class="song-info">
+                <div class="song-title">演员</div>
+                <div class="song-artist">薛之谦</div>
+            </div>
+        </div>
+        <button class="record-btn">🔴</button>
+    </div>
+    
+    <div class="performance-area">
+        <div class="progress-section">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="time-display">
+                <span>01:23</span>
+                <span>03:45</span>
+            </div>
+        </div>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active">手动模式</button>
+            <button class="mode-btn">自动模式</button>
+        </div>
+        
+        <div class="chord-display">
+            <div class="current-chord">Am</div>
+            <div class="chord-type">A小调 - 按下开始</div>
+            <div class="next-chords">
+                <div class="next-chord">F</div>
+                <div class="next-chord">C</div>
+                <div class="next-chord">G</div>
+            </div>
+        </div>
+        
+        <div class="chord-buttons">
+            <button class="chord-btn active" onclick="playChord('Am')">
+                <div class="chord-name">Am</div>
+                <div class="chord-detail">扫弦</div>
+            </button>
+            <button class="chord-btn" onclick="playChord('F')">
+                <div class="chord-name">F</div>
+                <div class="chord-detail">扫弦</div>
+            </button>
+            <button class="chord-btn" onclick="playChord('C')">
+                <div class="chord-name">C</div>
+                <div class="chord-detail">扫弦</div>
+            </button>
+            <button class="chord-btn" onclick="playChord('G')">
+                <div class="chord-name">G</div>
+                <div class="chord-detail">扫弦</div>
+            </button>
+        </div>
+        
+        <div class="lyrics-section">
+            <div class="lyrics-text">
+                简单点说话的方式简单点<br>
+                递进的情绪请省略
+            </div>
+        </div>
+        
+        <div class="metronome">
+            <button class="metronome-btn active">♪ 120 BPM</button>
+            <div class="beat-indicator">
+                <div class="beat-dot active"></div>
+                <div class="beat-dot"></div>
+                <div class="beat-dot"></div>
+                <div class="beat-dot"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn">⏮️</button>
+            <button class="control-btn">⏸️</button>
+            <button class="play-btn">▶️</button>
+            <button class="control-btn">⏸️</button>
+            <button class="control-btn">⏭️</button>
+        </div>
+    </div>
+    
+    <script>
+        let currentChordIndex = 0;
+        const chords = ['Am', 'F', 'C', 'G'];
+        
+        function playChord(chord) {
+            // 移除所有按钮的active状态
+            document.querySelectorAll('.chord-btn').forEach(btn => {
+                btn.classList.remove('active', 'ripple');
+            });
+            
+            // 找到对应的和弦按钮并激活
+            const buttons = document.querySelectorAll('.chord-btn');
+            buttons.forEach(btn => {
+                if (btn.querySelector('.chord-name').textContent === chord) {
+                    btn.classList.add('active', 'ripple');
+                    
+                    // 更新当前和弦显示
+                    document.querySelector('.current-chord').textContent = chord;
+                    
+                    // 模拟音频播放反馈
+                    console.log(`播放和弦: ${chord}`);
+                    
+                    // 0.6秒后移除ripple效果
+                    setTimeout(() => {
+                        btn.classList.remove('ripple');
+                    }, 600);
+                }
+            });
+        }
+        
+        // 模拟节拍器
+        let beatCounter = 0;
+        setInterval(() => {
+            const dots = document.querySelectorAll('.beat-dot');
+            dots.forEach(dot => dot.classList.remove('active'));
+            dots[beatCounter % 4].classList.add('active');
+            beatCounter++;
+        }, 500); // 120 BPM = 500ms per beat
+        
+        // 模拟进度条更新
+        let progress = 35;
+        setInterval(() => {
+            if (progress < 100) {
+                progress += 0.1;
+                document.querySelector('.progress-fill').style.width = progress + '%';
+            }
+        }, 100);
+    </script>
+</body>
+</html>
