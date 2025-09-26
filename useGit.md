@@ -1,5 +1,6 @@
 # Git学习
-## **初始操作**
+## 常用指令
+### **常规操作**
 1. 创建本地仓库和远程仓库，并将两个仓库连接起来：
    ```bash
    git init  #初始化`
@@ -10,20 +11,43 @@
    `git checkout -b develop`
    可以再此分支上对代码进行修改。
 
-4. 更新完成之后,输入如下代码完成一次代码提交
+3. `git status` 查看修改的状态。
+
+3. 更新完成之后,输入如下代码完成一次代码提交
     ```bash
    git add . #将所有代码添加到暂存区，然后使用 `
    git commit -m "注释"
-    ```
-    
-5. 使用命令切换回master分支，然后完成代码合并
+   ```
+   
+4. 使用命令切换回master分支，然后完成代码合并
    ```bash
     git checkout master
     git merge develop
    ```
 
-6. 将代码推送到GitHub：
+5. 将代码推送到GitHub：
    `git push origin master`
+
+### 其他基础指令
+
+#### 版本控制
+
+1. 版本回退。直接会回到对应版本的状态，这个状态之后的部分则不显示。
+   `git reset --hard commitID`
+2. `git reflog` 查看所有的版本控制，可以看到已经删除的提交记录。
+
+#### 分支
+
+1. `git branch`查看分支
+	1. `-a`参数，表示查看所有分支（包括远端和本地分支)，
+	2. `-r`表示查看远端分支
+	3. 直接添加一串字符，表示自动创建以该字符为名的分支
+	4. `git branch -d <branch-name>`删除本地分支。`-d`参数若改成`-D`，则是强制删除
+	5. `git push origin --delete <branch-name>`删除远程分支
+2. `git checkout 分支名`切换到对应分支
+	1. `-b`表示如若没有该分支，则创建该分支，并且切换到该分支。需在分支名前面使用该参数，如：`git checkout -b develop`
+3. `git merge <branch-name>` 合并分支。把branch-name分支的东西合并到当前所在的分支中。如果有冲突，则进入冲突文件，解决冲突之后，再重新add、commit一次。
+
 
 ## 笔记
 ### git rebase
