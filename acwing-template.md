@@ -88,4 +88,118 @@ vector<int> add(vector<int>&A,vector<int>&B){//使用引用加快传参速度
 ### 高精度减法
 
 ```csharp
+//减法要有一定的前提，A>=B，A>0,B>0
+vector<int> sub(vector<int>&A,vector<int>&B){
+    vector<int>C;
+    int t=0;
+
+    for(int i=0;i<A.size();i++){
+        //先减借位,再减B
+        t=A[i]-t;
+        if(i<B.size()) t-=B[i];
+        //处理C
+        C.push_back((t+10)%10);
+        //处理t
+        if(t<0) t=1;
+        else t=0;
+    }
+
+    //去除前导零
+    while(C.size()>1&&C.back()==0) C.pop_back();
+    
+    return C;
+}
 ```
+
+### 高精度乘法
+
+高精度乘低精度
+
+```csharp
+vector<int> mul(vector<int>&A,int b){
+    vector<int>C;
+    int t=0;//进位用
+
+    for(int i=0;i<A.size();i++){
+        t+=A[i]*b;
+        C.push_back(t%10);
+        t/=10;
+    }
+    //对剩下的t进行处理，这里t可能有多位，所以得用while
+    while(t){
+        C.push_back(t%10);
+        t/=10;
+    }
+    //去除前导零
+    while(C.size()>1&&C.back()==0) C.pop_back();
+
+    return C;
+}
+```
+
+### 高精度除法
+
+高精度除以低精度
+
+```csharp
+vector<int> div(vector<int> &A,int b,int &r){
+    vector<int>C;
+    r=0;//最开始余数为0
+
+    //除法一般从高位算起
+    for(int i=A.size()-1;i>=0;i--){
+        r=r*10+A[i];
+        C.push_back(r%b);//上位
+        r%=b;//相减得到下一次的余数
+    }
+
+    //此时的C是高位在前，需要反转
+    reverse(C.begin(),C.end());//这个函数在algrithm头文件中
+
+    //去除前导零
+    while(C.size()>1&&C.back()==0) C.pop_back();
+
+    return C;
+}
+```
+
+### 一维前缀和
+
+```csharp
+s[i] = a[1] + a[2] + ... a[i]
+a[l] + ... + a[r] = s[r] - s[l - 1]//这边l要多往左边减一个
+```
+
+### 二维前缀和
+
+```csharp
+s[i][j] = 第i行j列格子左上部分所有元素的和
+以(x1, y1)为左上角，(x2, y2)为右下角的子矩阵的和为：
+s[x2][y2] - s[x1][1, y2] - s[x2][y1 - 1] + s[x1 - 1][y1 - 1]
+```
+
+### 一维差分
+
+一维的差分数组上的一个数，可以理解成原数组上前一个数给当前数的影响。
+
+```csharp
+给区间[l, r]中的每个数加上c：B[l] += c, B[r + 1] -= c
+```
+
+### 二维差分
+
+二维的差分矩阵上的值可以理解成原矩阵左上两个相邻的数的影响再加上一个补偿值（多减去的那一部分）
+
+```csharp
+给以(x1, y1)为左上角，(x2, y2)为右下角的子矩阵中的所有元素加上c：
+S[x1, y1] += c, S[x2 + 1, y1] -= c, S[x1, y2 + 1] -= c, S[x2 + 1, y2 + 1] += c
+```
+
+### 位运算
+
+```csharp
+求n的第k位数字: n >> k & 1
+返回n的最后一位1：lowbit(n) = n & -n
+```
+
+### 
