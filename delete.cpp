@@ -2,40 +2,25 @@
 #include<vector>
 #include<algorithm>
 using namespace std;
+vector<int>alls;//存储所有离散化的值，类似于一个映射表，把所有需要的值存进数组当中
 
-//除法多一个余数r，r可以使用引用，这样可以直接对本体的r进行修改
-vector<int> div(vector<int> &A,int b,int &r){
-    vector<int>C;
-    r=0;//最开始余数为0
 
-    //除法一般从高位算起
-    for(int i=A.size()-1;i>=0;i--){
-        r=r*10+A[i];
-        C.push_back(r%b);//上位
-        r%=b;//相减得到下一次的余数
+//利用二分查找，在离散数组当中查找对应的下标
+int find(int x){
+    int l=0,r=alls.size()-1;//左右两边正好是两个端点
+    while(l<r){
+        int mid=l+r>>1;
+        if(alls[mid]>=x) r=mid;//这里为什么又是等于
+        else l=mid+1;
     }
 
-    //此时的C是高位在前，需要反转
-    reverse(C.begin(),C.end());
-
-    //去除前导零
-    while(C.size()>1&&C.back()==0) C.pop_back();
-
-    return C;
+    return l+1;//返回从1开始的下标。
 }
 
 int main(){
     ios::sync_with_stdio(false);
     cin.tie(0);cout.tie(0);
-    vector<int>A;
-    string a;int b,r;
-    cin>>a>>b;
-
-    for(int i=a.size()-1;i>=0;i--) A.push_back(a[i]-'0');
-
-    vector<int>C=div(A,b,r);
-
-    for(int i=C.size()-1;i>=0;i--) cout<<C[i];
-    
+    sort(alls.begin(),alls.end());//排序，默认是从小到大排序
+    alls.erase(unique(alls.begin(),alls.end()),alls.end());//去重
     return 0;
 }

@@ -142,6 +142,7 @@ vector<int> mul(vector<int>&A,int b){
 高精度除以低精度
 
 ```csharp
+//除法多一个余数r，r可以使用引用，这样可以直接对本体的r进行修改
 vector<int> div(vector<int> &A,int b,int &r){
     vector<int>C;
     r=0;//最开始余数为0
@@ -149,12 +150,12 @@ vector<int> div(vector<int> &A,int b,int &r){
     //除法一般从高位算起
     for(int i=A.size()-1;i>=0;i--){
         r=r*10+A[i];
-        C.push_back(r%b);//上位
+        C.push_back(r/b);//上位
         r%=b;//相减得到下一次的余数
     }
 
     //此时的C是高位在前，需要反转
-    reverse(C.begin(),C.end());//这个函数在algrithm头文件中
+    reverse(C.begin(),C.end());
 
     //去除前导零
     while(C.size()>1&&C.back()==0) C.pop_back();
@@ -202,4 +203,47 @@ S[x1, y1] += c, S[x2 + 1, y1] -= c, S[x1, y2 + 1] -= c, S[x2 + 1, y2 + 1] += c
 返回n的最后一位1：lowbit(n) = n & -n
 ```
 
-### 
+### 离散化
+
+```csharp
+vector<int>alls;//存储所有离散化的值，类似于一个映射表，把所有需要的值存进数组当中
+sort(alls.begin(),alls.end());//排序，默认是从小到大排序
+alls.erase(unique(alls.begin(),alls.end()),alls.end());//去重
+
+//利用二分查找，在离散数组当中查找对应的下标
+int find(int x){
+    int l=0,r=alls.size()-1;//左右两边正好是两个端点
+    while(l<r){
+        int mid=l+r>>1;
+        if(alls[mid]>=x) r=mid;//这里为什么又是等于
+        else l=mid+1;
+    }
+
+    return l+1;//返回从1开始的下标。
+}
+```
+
+### 区间合并
+
+```csharp
+// 将所有存在交集的区间合并
+void merge(vector<PII> &segs)
+{
+    vector<PII> res;
+
+    sort(segs.begin(), segs.end());
+
+    int st = -2e9, ed = -2e9;
+    for (auto seg : segs)
+        if (ed < seg.first)
+        {
+            if (st != -2e9) res.push_back({st, ed});
+            st = seg.first, ed = seg.second;
+        }
+        else ed = max(ed, seg.second);
+
+    if (st != -2e9) res.push_back({st, ed});
+
+    segs = res;
+}
+```
