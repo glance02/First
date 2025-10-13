@@ -14,7 +14,7 @@ void insert(){
     cnt[p]++;//表示以第p个结点结束的字符串加一个
 }
 
-int query(){
+int query(string str){
     int p=0;
     for(auto s:str){
         int u=s-'a';
@@ -34,7 +34,7 @@ int main(){
         }
         if(q=='Q'){
             cin>>str;
-            cout<<query()<<endl;
+            cout<<query(str)<<endl;
         }
     }
     return 0;
