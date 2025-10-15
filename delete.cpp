@@ -20,7 +20,8 @@ int find(int x){
 int main(){
     ios::sync_with_stdio(false);
     cin.tie(0);cout.tie(0);
-    sort(alls.begin(),alls.end());//排序，默认是从小到大排序
-    alls.erase(unique(alls.begin(),alls.end()),alls.end());//去重
+    string s1="admin";
+    string s2;cin>>s2;
+    if(s1==s2) cout<<"yes";
     return 0;
 }
