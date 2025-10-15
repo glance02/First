@@ -247,3 +247,17 @@ void merge(vector<PII> &segs)
     segs = res;
 }
 ```
+
+## 数据结构
+
+### 并查集
+
+并查集最重要的就是find函数，如下：
+
+```cpp
+//找到x的根节点，并优化路径
+int find(int x){
+    if(p[x]!=x) p[x]=find(p[x]);
+    return p[x];
+}
+```
