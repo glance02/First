@@ -4,6 +4,7 @@ const int N=1e5+10;
 int n,m;
 int h[N],cnt;
 
+//讲真堆这边我不是很想用数组模拟，如果可以的话，我想都用stl
 void down(int x){
     //t用来存x的左右两个儿子中最小的数的下标
     int t=x;

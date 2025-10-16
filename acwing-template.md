@@ -289,3 +289,56 @@ void up(int x){
     }
 }
 ```
+
+### hash表
+
+哈希表有两种解决冲突的办法
+
+1. 第一种是拉链法
+
+```csharp
+//N的设置上面选择质数冲突的概率小
+const int N=1e5+3;
+int h[N],e[N],ne[N],idx;
+
+//插入一个数x
+void insert(int x){
+    int k=(x%N+N)%N;
+    //这边使用头插
+    e[idx]=x;
+    ne[idx]=h[k];
+    h[k]=idx++;
+}
+
+//查找有没有x
+bool find(int x){
+    int k=(x%N+N)%N;
+
+    for(int i=h[k];i!=-1;i=ne[i]){
+        if(e[i]==x) return true;
+    }
+
+    return false;
+}
+```
+
+1. 第二种是开放寻址法，
+
+```csharp
+//N要比设置的值大2-3倍，并且如果有删除操作，进行逻辑删除而不是物理删除
+const int N=2e5+3;
+//0x3f3f3f3f是一个比1e9大的数
+int h[N],null=0x3f3f3f3f;
+
+//核心方法，如果有x则返回x的位置，没有则返回x应该插入的位置
+int find(int x){
+    int k=(x%N+N)%N;
+
+    while(h[k]!=null&&h[k]!=x){//如果k处有数并不等于x，则去下一个位置
+        k++;
+        if(k==N) k=0;
+    }
+
+    return k;
+}
+```
