@@ -1,13 +1,10 @@
-#include <iostream>
-#include <set>
+#include<iostream>
+using namespace std;
 
-int main() {
-    std::set<int> s = {9, 1, 7, 3, 5};  // 乱序插入
-    
-    // 遍历时会按顺序输出
-    for ( auto i=s.begin();i!=s.end();i++) {
-        std::cout << *i << " ";  // 输出: 1 3 5 7 9
-    }
-    
+int main(){
+    ios::sync_with_stdio(false);
+    cin.tie(0);cout.tie(0);
+    int a=-11,b=10;
+    cout<<a%b;   
     return 0;
 }

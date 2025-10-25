@@ -491,7 +491,6 @@ unordered_set, unordered_map, unordered_multiset, unordered_multimap, 哈希表
 ```
 
 #### bitset
-
 ```csharp
 bitset, 圧位
     bitset<10000> s;
@@ -511,3 +510,21 @@ bitset, 圧位
     flip()  等价于~
     flip(k) 把第k位取反
 ```
+
+## 线性规划
+### 01背包
+未优化
+```c++
+for(int i=1;i<=n;i++){
+    for(int j=0;j<=m;j++){
+        f[i][j]=f[i-1][j];
+        if(j>=v[i]) f[i][j]=max(f[i][j],f[i-1][j-v[i]]+w[i]);
+    }
+}
+```
+
+### 完全背包
+
+### 多重背包
+
+### 分组背包
