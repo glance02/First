@@ -1,7 +1,6 @@
 ## 基础算法
 
 ### 快速排序
-
 ```cpp
 void quick_sort(int q[],int l,int r){
     //递归函数首先考虑的都是退出条件
@@ -24,7 +23,6 @@ void quick_sort(int q[],int l,int r){
 ### 归并排序
 
 ### 整数二分搜索
-
 ```cpp
 int b_search1(int q[],int l,int r){
     //二分查找不是递归算法，所以不用优先考虑退出条件
@@ -47,7 +45,6 @@ int b_search2(int q[],int l,int r){
 ```
 
 ### 浮点数二分
-
 ```cpp
 double b_search3(double l,double r){
     const double esp=1e-8;
@@ -61,7 +58,6 @@ double b_search3(double l,double r){
 ```
 
 ### 高精度加法
-
 ```cpp
 vector<int> add(vector<int>&A,vector<int>&B){//使用引用加快传参速度
     //A的位数更多的加法
@@ -86,7 +82,6 @@ vector<int> add(vector<int>&A,vector<int>&B){//使用引用加快传参速度
 ```
 
 ### 高精度减法
-
 ```csharp
 //减法要有一定的前提，A>=B，A>0,B>0
 vector<int> sub(vector<int>&A,vector<int>&B){
@@ -112,9 +107,7 @@ vector<int> sub(vector<int>&A,vector<int>&B){
 ```
 
 ### 高精度乘法
-
 高精度乘低精度
-
 ```csharp
 vector<int> mul(vector<int>&A,int b){
     vector<int>C;
@@ -138,9 +131,7 @@ vector<int> mul(vector<int>&A,int b){
 ```
 
 ### 高精度除法
-
 高精度除以低精度
-
 ```csharp
 //除法多一个余数r，r可以使用引用，这样可以直接对本体的r进行修改
 vector<int> div(vector<int> &A,int b,int &r){
@@ -165,14 +156,12 @@ vector<int> div(vector<int> &A,int b,int &r){
 ```
 
 ### 一维前缀和
-
 ```csharp
 s[i] = a[1] + a[2] + ... a[i]
 a[l] + ... + a[r] = s[r] - s[l - 1]//这边l要多往左边减一个
 ```
 
 ### 二维前缀和
-
 ```csharp
 s[i][j] = 第i行j列格子左上部分所有元素的和
 以(x1, y1)为左上角，(x2, y2)为右下角的子矩阵的和为：
@@ -180,31 +169,25 @@ s[x2][y2] - s[x1][1, y2] - s[x2][y1 - 1] + s[x1 - 1][y1 - 1]
 ```
 
 ### 一维差分
-
 一维的差分数组上的一个数，可以理解成原数组上前一个数给当前数的影响。
-
 ```csharp
 给区间[l, r]中的每个数加上c：B[l] += c, B[r + 1] -= c
 ```
 
 ### 二维差分
-
 二维的差分矩阵上的值可以理解成原矩阵左上两个相邻的数的影响再加上一个补偿值（多减去的那一部分）
-
 ```csharp
 给以(x1, y1)为左上角，(x2, y2)为右下角的子矩阵中的所有元素加上c：
 S[x1, y1] += c, S[x2 + 1, y1] -= c, S[x1, y2 + 1] -= c, S[x2 + 1, y2 + 1] += c
 ```
 
 ### 位运算
-
 ```csharp
 求n的第k位数字: n >> k & 1
 返回n的最后一位1：lowbit(n) = n & -n
 ```
 
 ### 离散化
-
 ```csharp
 vector<int>alls;//存储所有离散化的值，类似于一个映射表，把所有需要的值存进数组当中
 sort(alls.begin(),alls.end());//排序，默认是从小到大排序
@@ -224,7 +207,6 @@ int find(int x){
 ```
 
 ### 区间合并
-
 ```csharp
 // 将所有存在交集的区间合并
 void merge(vector<PII> &segs)
@@ -249,9 +231,7 @@ void merge(vector<PII> &segs)
 ```
 
 ## 数据结构
-
 ### 并查集
-
 并查集最重要的就是find函数，如下：
 
 ```cpp
