@@ -1,54 +1,5 @@
-\documentclass[12pt,a4paper]{article}
-
-% --- 编码与中文支持 ---
-\usepackage{xeCJK}
-\usepackage{fontspec}
-% \setCJKmainfont{Microsoft YaHei}
-% 如果系统没有 Microsoft YaHei，可按需改为 SimSun 或者 
-\setCJKmainfont[BoldFont={SimHei}]{SimSun}
-
-
-% --- 页面布局与微调 ---
-\usepackage[a4paper,margin=2.5cm]{geometry}
-\usepackage{setspace}
-\onehalfspacing
-\usepackage{indentfirst}
-\setlength{\parindent}{2em}
-\setlength{\parskip}{0.5em}
-\setlength{\headheight}{14.5pt}
-
-% --- 常用包 ---
-\usepackage{amsmath}
-\usepackage{graphicx}
-\usepackage{enumitem}
-\usepackage{hyperref}
-\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue, citecolor=blue}
-\usepackage{fancyhdr}
-\pagestyle{fancy}
-\fancyhf{}
-\fancyhead[L]{中国矿业大学}
-\fancyhead[R]{\thepage}
-\renewcommand{\headrulewidth}{0.4pt}
-
-\usepackage{float}
+\documentclass{bikeTemplate}
 \bibliographystyle{plain}  % 选择引用样式（plain 为标准样式）
-
-% --- 目录样式优化 ---
-\usepackage{tocloft}
-\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
-\renewcommand{\cftsecfont}{\bfseries} % 一级目录加粗
-\renewcommand{\cftsecpagefont}{\bfseries\large} % 页码加粗并调大字号
-\setlength{\cftbeforesecskip}{0.8em} % 增加一级目录的间距
-
-% --- 标题与章节样式微调 ---
-\usepackage{titlesec}
-\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
-\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
-
-% --- 标题重定义 ---
-\renewcommand{\contentsname}{目录}
-\renewcommand{\refname}{参考文献}
-\renewcommand{\figurename}{图}
 
 \begin{document}
 
