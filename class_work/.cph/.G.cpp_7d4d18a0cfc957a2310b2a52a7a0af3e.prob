@@ -1,0 +1,1 @@
+{"name":"Local: G","url":"e:\\code\\github\\First\\class_work\\G.cpp","tests":[{"id":1762416719371,"input":"accb,","output":"abc acb bac bca cab cba"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"e:\\code\\github\\First\\class_work\\G.cpp","group":"local","local":true}
