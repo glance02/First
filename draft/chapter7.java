@@ -1,11 +1,13 @@
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.function.Consumer;
+import java.util.LinkedList;
+import java.util.List;
 
 public class chapter7 {
     public static void main(String[] args) {
         //泛型定义集合
-        ArrayList<String> list=new ArrayList<>();
+        List<String> list=new LinkedList<>();
         //添加数据
         list.add("Hello");
         list.add("World");
