@@ -167,6 +167,16 @@ list.forEach(System.out::println);
 | descendingIterator()             | 反向迭代器（从尾到头）     |
 
 #### Set集合
+无序（添加数据的顺序和获取数据的顺序不一致），无索引，不重复。由于set无索引，所以大部分功能都来自于Collection。
+
+##### HashSet
+基于哈希表实现的一个Set容器
+
+##### LinkedHashSet
+有序的集合
+
+##### TreeSet
+基于红黑树实现的集合，会自动排序，默认按照从小到大排序,如果是字符串，则按照字典序排序
 
 
 ### Map - 双列集合

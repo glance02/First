@@ -1,29 +1,43 @@
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.function.Consumer;
-import java.util.LinkedList;
-import java.util.List;
-
+import java.util.*;
 public class chapter7 {
     public static void main(String[] args) {
-        //泛型定义集合
-        List<String> list=new LinkedList<>();
-        //添加数据
-        list.add("Hello");
-        list.add("World");
-        list.add("whee!");
-        list.add("Hello");
+        Set<Student> set = new HashSet<>();
+        set.add(new Student("Apple", 20));
+        set.add(new Student("Banana", 22));
+        set.add(new Student("Orange", 21));
+        set.add(new Student("Apple", 20));
+        set.add(new Student("Cheeze", 23));
+        System.out.println(set);
+    }
+}
 
-        list.forEach(new Consumer<String>() {
-            public void accept(String s) {
-                System.out.println(s);
-            }
-        });
-        String str="";
-        list.forEach(s->{
-            System.out.println(s);
-        });
+class Student {
+    String name;
+    int age;
 
-        list.forEach(System.out::println);
+    public Student(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        return "Student{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                '}'+'\n';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Student student = (Student) o;
+        return age == student.age && Objects.equals(name, student.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, age);
     }
 }
