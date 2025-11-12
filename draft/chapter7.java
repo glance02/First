@@ -8,6 +8,7 @@ public class chapter7 {
         set.add(new Student("Apple", 20));
         set.add(new Student("Cheeze", 23));
         System.out.println(set);
+
     }
 }
 
@@ -40,4 +41,6 @@ class Student {
     public int hashCode() {
         return Objects.hash(name, age);
     }
+
+
 }
