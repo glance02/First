@@ -38,9 +38,6 @@
 - 变量的作用域只要记住一句话：出了大括号就不认识了。
 
 # 常用类
-## ArrayLIst - 泛型集合
-
-
 ## Collection - 单列集合
 
 Collection是所有单列集合的祖宗类，有一些通用的功能。使用时候需要`import java.util.Collection;`
@@ -705,3 +702,31 @@ try (BufferedReader br = new BufferedReader(new FileReader("source.txt"));
 | newLine() | 写入换行符（跨平台） |
 | flush() | 刷新缓冲区 |
 | close() | 关闭流释放资源 |
+
+# 类的进阶设计
+## 匿名内部类
+虽然是“类”，但是其实是个没有声明名字的对象。
+```java
+new Thread(new Runnable() {
+    @Override
+    public void run() {
+        System.out.println("Hello from a thread!");
+    }
+}).start();
+```
+
+一般来讲接口需要有一个类来继承实现，但是匿名内部类可以直接用接口的“类名”来创建：
+```java
+interface myinf{
+    void cmp();
+}
+
+new myinf() {
+    @Override
+    public void cmp() {
+        System.out.println("Anonymous class implementing myinf");
+    }
+}.cmp();
+```
+
+## lambda表达式
