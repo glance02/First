@@ -322,27 +322,27 @@ clearButton.addActionListener(e -> {
 有三种方法来创建多线程
 
 ### 继承Thread
-先定义出一个继承Thread的子类
-```java
-class MyThread extends Thread{
-    //重写run方法
-    @Override
-    public void run() {
-        //线程要执行的代码
-        for (int i = 0; i < 10; i++) {
-            System.out.println("Thread running: " + i);
+1. 先定义出一个继承Thread的子类
+    ```java
+    class MyThread extends Thread{
+        //重写run方法
+        @Override
+        public void run() {
+            //线程要执行的代码
+            for (int i = 0; i < 10; i++) {
+                System.out.println("Thread  running: " + i);
+            }
         }
     }
-}
-```
+    ```
 
-然后再创建一个子类线程对象，然后通过start()函数来启动线程，注意并非run()。如果是调用run()函数，则会变成一个普通对象来调用，而不是启动一个新的线程。
-```java
-    //创建线程对象
-    MyThread t1 = new MyThread();
-    //启动线程
-    t1.start(); 
-```
+2. 然后再创建一个子类线程对象，然后通过start()函数来启动线程，注意并非run()。如果是调用run()函数，则会变成一个普通对象来调用，而不是启动一个新的线程。
+    ```java
+        //创建线程对象
+        MyThread t1 = new MyThread();
+        //启动线程
+        t1.start(); 
+    ```
 
 ### 实现Runnable接口
 1. 先定义一个线程任务类,这个类需要实现Runnable的接口
@@ -386,3 +386,322 @@ class MyThread extends Thread{
         }
     }).start();
     ```
+
+### 实现Callable接口
+前两个线程的创建方式的run()函数都是void类型，无法返回数据。注意，Callable来自java.util.concurrent.Callable，使用时需要import对应的包
+1. 定义一个实现类实现Callable接口的call函数
+    ```java
+    class MyCallable implements Callable<String>{
+        private int n;
+        public MyCallable(int n){
+            this.n = n;
+        }
+        public String call(){
+            int sum = 0;
+            for (int i = 0; i <= n; i++) {
+                sum += i;
+            }
+            return String.valueOf(sum);
+        }
+    }
+    ```
+
+2. 创建Callable对象并且将这个对象给真正的线程任务类对象FutureTask。其中，FutureTask来自`java.util.concurrent.FutureTask`。可以将FutureTask当作一个Runnable对象（事实上FutureTask继承了Runnable，可以通过多态来接受FutureTask对象）。
+    ```java
+    Callable<String> c1=new MyCallable(100);
+    FutureTask<String> f1=new FutureTask<>(c1);
+    //启动线程
+    new Thread(f1).start();
+    ```
+
+3. 通过FutureTask的get方法来取得返回数据
+    ```java
+    try {
+        System.out.println("Callable result: " + f1.get());
+    } catch (Exception e) {
+        e.printStackTrace();
+    } 
+    ```
+    最后得到的结果是等这个线程运行完之后的结果。
+
+# IO流
+IO流用于处理文件的输入和输出操作。Java中的IO流分为字节流和字符流两大类。
+
+使用IO流时需要导入：`import java.io.*;`
+
+## 字节流
+字节流以字节为单位读写数据，适合所有类型的文件（文本、图片、音频、视频等）。
+
+### FileInputStream - 字节输入流
+用于从文件中读取数据。
+
+**基本使用步骤：**
+1. 创建字节输入流对象
+2. 读取数据
+3. 关闭流释放资源
+
+**方法一：一次读取一个字节**
+```java
+// 1. 创建流对象
+FileInputStream fis = new FileInputStream("file.txt");
+
+// 2. 读取数据
+int b;
+while ((b = fis.read()) != -1) {  // read()返回-1表示读取完毕
+    System.out.print((char) b);
+}
+
+// 3. 关闭流
+fis.close();
+```
+
+**方法二：一次读取多个字节（推荐）**
+```java
+FileInputStream fis = new FileInputStream("file.txt");
+
+byte[] buffer = new byte[1024];  // 定义缓冲区
+int len;
+while ((len = fis.read(buffer)) != -1) {  // len是实际读取的字节数
+    System.out.print(new String(buffer, 0, len));
+}
+
+fis.close();
+```
+
+**使用try-with-resources自动关闭流（推荐写法）**
+```java
+try (FileInputStream fis = new FileInputStream("file.txt")) {
+    byte[] buffer = new byte[1024];
+    int len;
+    while ((len = fis.read(buffer)) != -1) {
+        System.out.print(new String(buffer, 0, len));
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### FileOutputStream - 字节输出流
+用于将数据写入文件。
+
+**基本用法：**
+```java
+// 创建输出流，会覆盖原文件内容
+FileOutputStream fos = new FileOutputStream("output.txt");
+
+// 写入单个字节
+fos.write(97);  // 写入字符'a'
+
+// 写入字节数组
+byte[] bytes = "Hello World".getBytes();
+fos.write(bytes);
+
+// 写入字节数组的一部分
+fos.write(bytes, 0, 5);  // 只写入"Hello"
+
+// 关闭流
+fos.close();
+```
+
+**追加模式（不覆盖原文件）：**
+```java
+// 第二个参数为true表示追加模式
+FileOutputStream fos = new FileOutputStream("output.txt", true);
+fos.write("追加的内容".getBytes());
+fos.close();
+```
+
+**推荐写法（自动关闭）：**
+```java
+try (FileOutputStream fos = new FileOutputStream("output.txt", true)) {
+    fos.write("Hello World\n".getBytes());
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### 文件复制示例
+```java
+try (FileInputStream fis = new FileInputStream("source.jpg");
+     FileOutputStream fos = new FileOutputStream("copy.jpg")) {
+    
+    byte[] buffer = new byte[1024];
+    int len;
+    while ((len = fis.read(buffer)) != -1) {
+        fos.write(buffer, 0, len);
+    }
+    System.out.println("文件复制完成");
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### 常用方法总结
+
+**FileInputStream：**
+| 方法名 | 说明 |
+|--------|------|
+| read() | 读取一个字节，返回-1表示读取完毕 |
+| read(byte[] b) | 读取多个字节到数组，返回实际读取的字节数 |
+| available() | 返回可读取的剩余字节数 |
+| close() | 关闭流释放资源 |
+
+**FileOutputStream：**
+| 方法名 | 说明 |
+|--------|------|
+| write(int b) | 写入一个字节 |
+| write(byte[] b) | 写入字节数组 |
+| write(byte[] b, int off, int len) | 写入字节数组的一部分 |
+| flush() | 刷新缓冲区 |
+| close() | 关闭流释放资源 |
+
+## 字符流
+字符流以字符为单位读写数据，只适合文本文件。字符流会自动处理字符编码，避免乱码问题。
+
+### FileReader - 字符输入流
+用于从文本文件中读取字符数据。
+
+**方法一：一次读取一个字符**
+```java
+try (FileReader fr = new FileReader("file.txt")) {
+    int c;
+    while ((c = fr.read()) != -1) {
+        System.out.print((char) c);
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+**方法二：一次读取多个字符（推荐）**
+```java
+try (FileReader fr = new FileReader("file.txt")) {
+    char[] buffer = new char[1024];
+    int len;
+    while ((len = fr.read(buffer)) != -1) {
+        System.out.print(new String(buffer, 0, len));
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### FileWriter - 字符输出流
+用于将字符数据写入文本文件。
+
+**基本用法：**
+```java
+try (FileWriter fw = new FileWriter("output.txt")) {
+    // 写入单个字符
+    fw.write('A');
+    
+    // 写入字符串
+    fw.write("Hello World");
+    
+    // 写入字符数组
+    char[] chars = {'J', 'a', 'v', 'a'};
+    fw.write(chars);
+    
+    // 写入字符串的一部分
+    fw.write("Hello World", 0, 5);  // 只写入"Hello"
+    
+    // 换行
+    fw.write("\n");
+    
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+**追加模式：**
+```java
+try (FileWriter fw = new FileWriter("output.txt", true)) {
+    fw.write("追加的内容\n");
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### BufferedReader - 缓冲字符输入流
+提供缓冲功能，提高读取效率，并且可以按行读取。
+
+**按行读取（非常常用）：**
+```java
+try (BufferedReader br = new BufferedReader(new FileReader("file.txt"))) {
+    String line;
+    while ((line = br.readLine()) != null) {  // readLine()读取一行，不包含换行符
+        System.out.println(line);
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### BufferedWriter - 缓冲字符输出流
+提供缓冲功能，提高写入效率。
+
+**基本用法：**
+```java
+try (BufferedWriter bw = new BufferedWriter(new FileWriter("output.txt"))) {
+    bw.write("第一行内容");
+    bw.newLine();  // 写入换行符（跨平台）
+    bw.write("第二行内容");
+    bw.newLine();
+    bw.write("第三行内容");
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### 文本文件复制示例
+```java
+try (BufferedReader br = new BufferedReader(new FileReader("source.txt"));
+     BufferedWriter bw = new BufferedWriter(new FileWriter("copy.txt"))) {
+    
+    String line;
+    while ((line = br.readLine()) != null) {
+        bw.write(line);
+        bw.newLine();
+    }
+    System.out.println("文件复制完成");
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### 常用方法总结
+
+**FileReader：**
+| 方法名 | 说明 |
+|--------|------|
+| read() | 读取一个字符，返回-1表示读取完毕 |
+| read(char[] cbuf) | 读取多个字符到数组，返回实际读取的字符数 |
+| close() | 关闭流释放资源 |
+
+**FileWriter：**
+| 方法名 | 说明 |
+|--------|------|
+| write(int c) | 写入一个字符 |
+| write(String str) | 写入字符串 |
+| write(char[] cbuf) | 写入字符数组 |
+| write(String str, int off, int len) | 写入字符串的一部分 |
+| flush() | 刷新缓冲区 |
+| close() | 关闭流释放资源 |
+
+**BufferedReader：**
+| 方法名 | 说明 |
+|--------|------|
+| read() | 读取一个字符 |
+| read(char[] cbuf) | 读取多个字符到数组 |
+| readLine() | 读取一行文本，不包含换行符 |
+| close() | 关闭流释放资源 |
+
+**BufferedWriter：**
+| 方法名 | 说明 |
+|--------|------|
+| write(int c) | 写入一个字符 |
+| write(String str) | 写入字符串 |
+| write(char[] cbuf) | 写入字符数组 |
+| newLine() | 写入换行符（跨平台） |
+| flush() | 刷新缓冲区 |
+| close() | 关闭流释放资源 |
