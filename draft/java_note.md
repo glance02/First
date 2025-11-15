@@ -14,7 +14,7 @@
 1. **逻辑运算符**
 
 | 逻辑运算符 | 解释 |
-|:-----------:|:---------------------------`--------------------------------:|
+|-------------|------------------------------------------------------|
 | &           | 逻辑与（两边的算子都是true，结果才是true）                  |
 | !           | 逻辑非（取反，! false就是true，! true就是假，这是一个单目运算符）|
 | ^           | 逻辑异或（两边的算子只要不一样，结果就是true）                |
@@ -45,7 +45,7 @@ Collection是所有单列集合的祖宗类，有一些通用的功能。使用�
 考试的时候可以直接`import java.util.*`
 
 | 方法名                  | 说明                           |
-|-------------------------|--------------------------------|
+|:------------------------|:-------------------------------|
 | add(E e)                | 向集合中添加元素               |
 | addAll(Collection<? extends E> c) | 添加一个集合中的所有元素 |
 | remove(Object o)        | 移除指定元素                   |
@@ -130,7 +130,7 @@ list.forEach(System.out::println);
    注意，两种方法后续使用也有区别，第一种需要使用Object来接收值，第二种使用String。
 6.  `indexOf(Object o)`：返回元素第一次出现的位置
 7.  `lastIndexOf(Object o)`：返回元素最后一次出现的位置
-8.  l`istIterator() `和 `listIterator(int index)`：返回 ListIterator，支持双向遍历、previous、set、add 等
+8.  `listIterator() `和 `listIterator(int index)`：返回 ListIterator，支持双向遍历、previous、set、add 等
 9.  `sort(Comparator<? super E> c)`：就地排序（Java 8+）
 
 #### ArrayList
@@ -730,3 +730,318 @@ new myinf() {
 ```
 
 ## lambda表达式
+Lambda表达式是Java 8引入的一个重要特性，它允许我们将函数作为方法参数传递，或者将代码作为数据对待。Lambda表达式提供了一种简洁、函数式的编程方式，**主要用于简化匿名内部类的写法**。
+
+### Lambda表达式的定义和核心目的
+Lambda表达式本质上是一个匿名函数，它没有名称，但有参数列表、函数体和返回类型。Lambda表达式的核心目的是：
+- 简化代码：减少冗余的匿名内部类代码
+- 函数式编程：支持将函数作为一等公民进行传递
+- 提高可读性：使代码更加简洁明了
+
+### 标准语法结构
+Lambda表达式的基本语法结构：
+```
+(参数列表) -> { 函数体 }
+```
+
+- **参数列表**：指定Lambda表达式的参数，可以省略参数类型（类型推断）
+- **箭头操作符**：`->` 分隔参数列表和函数体
+- **函数体**：Lambda表达式要执行的代码，可以是一个表达式或代码块
+
+**语法示例：**
+```java
+// 无参数，无返回值
+() -> System.out.println("Hello Lambda")
+
+// 单个参数，无返回值
+(name) -> System.out.println("Hello, " + name)
+// 参数类型可省略
+name -> System.out.println("Hello, " + name)
+
+// 多个参数，有返回值
+(a, b) -> a + b
+// 当函数体只有一条语句时，return关键字可省略
+(a, b) -> { return a + b; }
+
+// 多行语句，需要使用代码块
+(x, y) -> {
+    int sum = x + y;
+    int product = x * y;
+    return sum + product;
+}
+```
+
+### 函数式接口的原理及与Lambda的关联
+函数式接口是指只有一个抽象方法的接口。Lambda表达式需要函数式接口的支持，因为Lambda表达式本质上是函数式接口中抽象方法的具体实现。
+
+**@FunctionalInterface注解：**
+`@FunctionalInterface`是一个注解，用于标识一个接口为函数式接口。它有两个作用：
+1. 编译器检查：确保接口只有一个抽象方法，如果有多个，编译器会报错
+2. 文档说明：明确表明该接口设计用于Lambda表达式
+
+**示例：**
+```java
+@FunctionalInterface
+interface MyFunctionalInterface {
+    // 唯一的抽象方法
+    void doSomething(String str);
+    // 可以包含默认方法
+    default void defaultMethod() {
+        System.out.println("This is a default method");
+    }
+    // 可以包含静态方法
+    static void staticMethod() {
+        System.out.println("This is a static method");
+    }
+    // 可以包含从Object类继承的方法
+    @Override
+    boolean equals(Object obj);
+}
+
+// 使用Lambda表达式实现函数式接口
+MyFunctionalInterface myInterface = str -> System.out.println("Doing something with: " + str);
+myInterface.doSomething("Lambda");
+```
+
+### 典型应用场景
+
+#### 集合遍历
+```java
+List<String> list = Arrays.asList("Apple", "Banana", "Orange");
+
+// 传统方式
+for (String fruit : list) {
+    System.out.println(fruit);
+}
+
+// Lambda方式
+list.forEach(fruit -> System.out.println(fruit));
+
+// 方法引用方式
+list.forEach(System.out::println);
+```
+
+#### 事件处理
+```java
+// 按钮点击事件
+JButton button = new JButton("Click me");
+
+// 传统方式
+button.addActionListener(new ActionListener() {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        System.out.println("Button clicked");
+    }
+});
+
+// Lambda方式
+button.addActionListener(e -> System.out.println("Button clicked"));
+```
+
+
+#### 线程创建
+```java
+// 传统方式
+new Thread(new Runnable() {
+    @Override
+    public void run() {
+        System.out.println("Thread is running");
+    }
+}).start();
+
+// Lambda方式
+new Thread(() -> System.out.println("Thread is running")).start();
+```
+
+### 实际代码示例
+
+#### 无参数无返回值
+```java
+// 定义函数式接口
+@FunctionalInterface
+interface RunnableTask {
+    void run();
+}
+
+public class LambdaExample1 {
+    public static void main(String[] args) {
+        // 使用Lambda表达式
+        RunnableTask task = () -> {
+            System.out.println("Task is running");
+            System.out.println("Task completed");
+        };
+        
+        task.run();
+    }
+}
+```
+
+#### 单参数无返回值
+```java
+// 定义函数式接口
+@FunctionalInterface
+interface Consumer<T> {
+    void accept(T t);
+}
+
+public class LambdaExample2 {
+    public static void main(String[] args) {
+        // 使用Lambda表达式
+        Consumer<String> printer = str -> System.out.println("Printing: " + str);
+        
+        printer.accept("Hello Lambda");
+    }
+}
+```
+
+#### 多参数有返回值
+```java
+// 定义函数式接口
+@FunctionalInterface
+interface Calculator {
+    int calculate(int a, int b);
+}
+
+public class LambdaExample3 {
+    public static void main(String[] args) {
+        // 加法
+        Calculator addition = (a, b) -> a + b;
+        System.out.println("10 + 5 = " + addition.calculate(10, 5));  // 15
+        
+        // 乘法
+        Calculator multiplication = (a, b) -> a * b;
+        System.out.println("10 * 5 = " + multiplication.calculate(10, 5));  // 50
+        
+        // 复杂计算
+        Calculator complex = (a, b) -> {
+            int sum = a + b;
+            int product = a * b;
+            return sum + product;
+        };
+        System.out.println("Complex(10, 5) = " + complex.calculate(10, 5));  // 65
+    }
+}
+```
+
+#### 泛型函数式接口
+```java
+// 定义泛型函数式接口
+@FunctionalInterface
+interface Function<T, R> {
+    R apply(T t);
+}
+
+public class LambdaExample4 {
+    public static void main(String[] args) {
+        // String to Integer
+        Function<String, Integer> stringToInt = Integer::parseInt;
+        System.out.println("String '123' to Integer: " + stringToInt.apply("123"));
+        
+        // Integer to String
+        Function<Integer, String> intToString = Object::toString;
+        System.out.println("Integer 123 to String: " + intToString.apply(123));
+        
+        // 自定义转换
+        Function<String, String> toUpperCase = str -> str.toUpperCase();
+        System.out.println("Convert 'hello' to uppercase: " + toUpperCase.apply("hello"));
+    }
+}
+```
+
+### 变量捕获规则和this关键字特性
+
+#### 变量捕获规则
+Lambda表达式可以访问外部变量，但有以下限制：
+
+1. **访问final或等效final变量**：Lambda表达式可以访问外部final变量或事实上是final的变量（未被重新赋值）
+   ```java
+   public class VariableCapture {
+       public static void main(String[] args) {
+           final int x = 10;  // 显式final
+           int y = 20;        // 事实上final（未被重新赋值）
+           
+           Runnable r = () -> {
+               System.out.println("x = " + x);  // 合法
+               System.out.println("y = " + y);  // 合法
+           };
+           
+           // y = 30;  // 如果取消注释，会导致Lambda表达式编译错误
+           r.run();
+       }
+   }
+   ```
+
+2. **不能修改外部变量**：Lambda表达式内部不能修改外部局部变量
+   ```java
+   public class VariableModification {
+       public static void main(String[] args) {
+           int count = 0;
+           
+           // Runnable r = () -> count++;  // 编译错误
+           
+           // 解决方案：使用数组或对象
+           int[] counter = {0};
+           Runnable r = () -> counter[0]++;
+           r.run();
+           System.out.println("Counter: " + counter[0]);  // 1
+       }
+   }
+   ```
+
+3. **可以访问实例变量和静态变量**：没有限制
+   ```java
+   public class InstanceVariables {
+       private int instanceVar = 10;
+       private static int staticVar = 20;
+       
+       public void test() {
+           Runnable r = () -> {
+               instanceVar++;  // 合法
+               staticVar++;    // 合法
+               System.out.println("instanceVar = " + instanceVar);
+               System.out.println("staticVar = " + staticVar);
+           };
+           r.run();
+       }
+       
+       public static void main(String[] args) {
+           new InstanceVariables().test();
+       }
+   }
+   ```
+
+#### this关键字特性
+在Lambda表达式中，`this`关键字引用的是创建Lambda表达式的外部类的实例，而不是Lambda表达式本身（因为Lambda表达式不是内部类）。
+
+```java
+public class ThisKeywordExample {
+    private String name = "Outer Class";
+    
+    public void test() {
+        Runnable r = () -> {
+            // 这里的this引用的是ThisKeywordExample的实例
+            System.out.println("this.name = " + this.name);
+        };
+        
+        // 对比匿名内部类中的this
+        Runnable r2 = new Runnable() {
+            private String name = "Anonymous Class";
+            
+            @Override
+            public void run() {
+                // 这里的this引用的是匿名内部类的实例
+                System.out.println("this.name = " + this.name);
+                // 要访问外部类的name，需要使用OuterClassName.this
+                System.out.println("Outer.this.name = " + ThisKeywordExample.this.name);
+            }
+        };
+        
+        r.run();
+        r2.run();
+    }
+    
+    public static void main(String[] args) {
+        new ThisKeywordExample().test();
+    }
+}
+```
