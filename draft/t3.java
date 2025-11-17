@@ -11,6 +11,14 @@ public class t3 {
                 setBasicGui();
             }
         });
+
+        // new Thread(new Runnable() {
+        //     @Override
+        //     public void run() {
+        //         // 这里可以放置需要在后台运行的代码
+        //         setBasicGui();
+        //     }
+        // }).start();
     }
 
     public static void setBasicGui() {
@@ -48,12 +56,7 @@ public class t3 {
         JButton clearButton = new JButton("清空");
 
         //与事件源合二为一
-        JButton exitButton = new JButton("退出"){
-            @Override
-            protected void fireActionPerformed(ActionEvent event) {
-                System.exit(0);
-            }
-        };
+        ExitButton exitButton = new ExitButton("退出");
 
         // 添加按钮到按钮面板
         buttonPanel.add(solveButton);
@@ -116,5 +119,16 @@ class f {
         } else {
             return "方程无实根";
         }
+    }
+}
+
+class ExitButton extends JButton {
+    public ExitButton(String text) {
+        super(text);
+    }
+    
+    @Override
+    protected void fireActionPerformed(ActionEvent event) {
+        System.exit(0);
     }
 }

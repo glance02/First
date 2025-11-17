@@ -6,10 +6,13 @@ public class chapter8 {
         
         // InputStreamDemo();
         // FileReaderDemo();
+        InputStreamReader isr =new InputStreamReader(new FileInputStream("file.txt"),"UTF-8");
+        BufferedReader br=new BufferedReader(isr);
+
     }
     
-    //用buffered包装的字符流输入
-    public static void BufferedReaderDemo() throws Exception{
+        //用buffered包装的字符流输入
+        public static void BufferedReaderDemo() throws Exception{
         try(
             BufferedReader br=new BufferedReader(new FileReader("file.txt"));
         ){

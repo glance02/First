@@ -2,17 +2,15 @@ import java.util.*;
 
 public class chapter5 {
     public static void main(String[] args) {
-        List<String> list = Arrays.asList("Apple", "Banana", "Orange");
+        List<String> list = Arrays.asList("zoe","Apple", "Banana", "Orange");
 
-        // 传统方式
-        for (String fruit : list) {
-            System.out.println(fruit);
+        Iterator<String> it = list.iterator();
+        while(it.hasNext()){
+            System.out.println(it.next());
         }
 
-        // Lambda方式
-        list.forEach(fruit ->System.out.println(fruit));
+        list.sort(null);
 
-        // 方法引用方式
         list.forEach(System.out::println);
     }
 }

@@ -16,7 +16,17 @@ public class chapter9 {
         }).start();
 
         Callable<String> c1=new MyCallable(100);
-        FutureTask<String> f1=new FutureTask<>(c1);
+        Callable<String> c2=new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                int product = 1;
+                for (int i = 1; i <= 5; i++) {
+                    product *= i;
+                }
+                return String.valueOf(product);
+            }
+        };
+        FutureTask<String> f1=new FutureTask<>(c2);
         //启动线程
         new Thread(f1).start();
 

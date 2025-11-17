@@ -312,8 +312,7 @@ clearButton.addActionListener(e -> {
 ## 概念
 线程（thread）是一个程序内部的一条执行流程
 
-多线程是指从软硬件上实现的多条执行流程的技术（多条线程
-由CPU负责调度执行）
+多线程是指从软硬件上实现的多条执行流程的技术（多条线程由CPU负责调度执行）
 
 ## 创建线程
 有三种方法来创建多线程
@@ -702,6 +701,130 @@ try (BufferedReader br = new BufferedReader(new FileReader("source.txt"));
 | newLine() | 写入换行符（跨平台） |
 | flush() | 刷新缓冲区 |
 | close() | 关闭流释放资源 |
+
+## 字节字符转换流
+字节字符转换流是连接字节流和字符流的桥梁，主要用于处理编码转换问题。
+
+### InputStreamReader - 字节输入流转字符输入流
+将字节输入流转换为字符输入流，可以指定字符编码。
+
+**基本用法：**
+```java
+// 使用默认编码
+try (InputStreamReader isr = new InputStreamReader(new FileInputStream("file.txt"));
+     BufferedReader br = new BufferedReader(isr)) {
+    
+    String line;
+    while ((line = br.readLine()) != null) {
+        System.out.println(line);
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+}
+
+// 指定编码（推荐）
+try (InputStreamReader isr = new InputStreamReader(
+        new FileInputStream("file.txt"), "UTF-8");
+     BufferedReader br = new BufferedReader(isr)) {
+    
+    String line;
+    while ((line = br.readLine()) != null) {
+        System.out.println(line);
+    }
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### OutputStreamWriter - 字符输出流转字节输出流
+将字符输出流转换为字节输出流，可以指定字符编码。
+
+**基本用法：**
+```java
+// 使用默认编码
+try (OutputStreamWriter osw = new OutputStreamWriter(
+        new FileOutputStream("output.txt"));
+     BufferedWriter bw = new BufferedWriter(osw)) {
+    
+    bw.write("Hello, 世界!");
+    bw.newLine();
+    bw.write("中文内容测试");
+} catch (IOException e) {
+    e.printStackTrace();
+}
+
+// 指定编码（推荐）
+try (OutputStreamWriter osw = new OutputStreamWriter(
+        new FileOutputStream("output.txt"), "UTF-8");
+     BufferedWriter bw = new BufferedWriter(osw)) {
+    
+    bw.write("Hello, 世界!");
+    bw.newLine();
+    bw.write("指定UTF-8编码写入");
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+### 实际应用场景
+
+#### 读取不同编码的文件
+```java
+public static void readFileWithEncoding(String filePath, String encoding) {
+    try (InputStreamReader isr = new InputStreamReader(
+            new FileInputStream(filePath), encoding);
+         BufferedReader br = new BufferedReader(isr)) {
+        
+        String line;
+        while ((line = br.readLine()) != null) {
+            System.out.println(line);
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+// 使用示例
+readFileWithEncoding("chinese.txt", "GBK");    // 读取GBK编码文件
+readFileWithEncoding("unicode.txt", "UTF-8");   // 读取UTF-8编码文件
+```
+
+#### 文件编码转换
+```java
+public static void convertEncoding(String sourceFile, String targetFile, 
+                                  String sourceEncoding, String targetEncoding) {
+    try (InputStreamReader isr = new InputStreamReader(
+            new FileInputStream(sourceFile), sourceEncoding);
+         BufferedReader br = new BufferedReader(isr);
+         OutputStreamWriter osw = new OutputStreamWriter(
+            new FileOutputStream(targetFile), targetEncoding);
+         BufferedWriter bw = new BufferedWriter(osw)) {
+        
+        String line;
+        while ((line = br.readLine()) != null) {
+            bw.write(line);
+            bw.newLine();
+        }
+        System.out.println("编码转换完成");
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+// 使用示例：GBK转UTF-8
+convertEncoding("gbk_file.txt", "utf8_file.txt", "GBK", "UTF-8");
+```
+
+### 常用编码格式
+| 编码名称 | 说明 | 特点 |
+|---------|------|------|
+| UTF-8 | Unicode变长编码 | 国际通用，支持所有字符 |
+| GBK | 中文编码 | 主要用于简体中文 |
+| ISO-8859-1 | 西欧编码 | 单字节编码 |
+| ASCII | 美国标准信息交换码 | 7位编码，只支持英文字符 |
+
+
+
 
 # 类的进阶设计
 ## 匿名内部类
