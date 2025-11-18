@@ -12,6 +12,14 @@ public class chapter5 {
         list.sort(null);
 
         list.forEach(System.out::println);
+
+        Queue<Integer> queue = new LinkedList<>();
+
+        double d=2.5/0;
+
+        int a[]={1,2,3};
+        System.out.println(a.length);
+        
     }
 }
 
