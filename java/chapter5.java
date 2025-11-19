@@ -2,27 +2,36 @@ import java.util.*;
 
 public class chapter5 {
     public static void main(String[] args) {
-        List<String> list = Arrays.asList("zoe","Apple", "Banana", "Orange");
+        List<Point> list = Arrays.asList(new Point(1,2), new Point(3,4), new Point(5,6), new Point(7,8));
 
-        Iterator<String> it = list.iterator();
-        while(it.hasNext()){
-            System.out.println(it.next());
+        // Iterator<Point> it = list.iterator();
+        // while(it.hasNext()){
+        //     System.out.println(it.next().getX() + "," + it.next().getY());
+        // }
+
+        list.sort(new Comparator<Point>() {
+            @Override
+            public int compare(Point p1, Point p2) {
+                return p1.getX() - p2.getX();
+            }
+        });
+
+        for(Point p : list){
+            System.out.println(p.getX() + "," + p.getY());
         }
-
-        list.sort(null);
-
-        list.forEach(System.out::println);
-
-        Queue<Integer> queue = new LinkedList<>();
-
-        double d=2.5/0;
-
-        int a[]={1,2,3};
-        System.out.println(a.length);
-        
     }
 }
 
 interface myinf {
     void cmp();
 }
+
+class Point {
+    private int x, y;
+    public Point(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+    int getX() {return x;}
+    int getY() {return y;}
+ }

@@ -38,7 +38,8 @@
 - 变量的作用域只要记住一句话：出了大括号就不认识了。
 
 # 常用类
-## Collection - 单列集合
+## 泛型集合
+### Collection - 单列集合
 
 Collection是所有单列集合的祖宗类，有一些通用的功能。使用时候需要`import java.util.Collection;`
 
@@ -88,7 +89,7 @@ list.forEach(s->System.out.println(s));
 list.forEach(System.out::println);
 ```
 
-### List集合
+#### List集合
 有序，可重复，有索引。Collection的所有功能都有。
 需要`import java.util.List`
 1. 定义集合
@@ -133,12 +134,12 @@ list.forEach(System.out::println);
 8.  `listIterator() `和 `listIterator(int index)`：返回 ListIterator，支持双向遍历、previous、set、add 等
 9.  `sort(Comparator<? super E> c)`：就地排序（Java 8+）
 
-#### ArrayList
+##### ArrayList
 基于数组存储数据，有如下特点：
 1. 查询速度快，查询任意数据耗时相同
 2. 增删效率低
 
-#### LinkedList
+##### LinkedList
 基于双链表存储数据，有如下的特点：
 1. 查询速度慢
 2. 增删相对较快
@@ -162,10 +163,10 @@ list.forEach(System.out::println);
 | pop()                            | 作为栈顶弹出元素           |
 | descendingIterator()             | 反向迭代器（从尾到头）     |
 
-### Set集合
+#### Set集合
 无序（添加数据的顺序和获取数据的顺序不一致），无索引，不重复。由于set无索引，所以大部分功能都来自于Collection。
 
-#### HashSet
+##### HashSet
 基于哈希表实现的一个Set容器
 
 如果T设置成自定义的类，则不会自动去重，因为容器无法识别两个类是否相同。需要在类内重写一些函数。
@@ -185,15 +186,193 @@ public int hashCode() {
 ```
 
 
-#### LinkedHashSet
+##### LinkedHashSet
 有序的集合
 
-#### TreeSet
+##### TreeSet
 基于红黑树实现的集合，会自动排序，默认按照从小到大排序,如果是字符串，则按照字典序排序
 
 
-## Map - 双列集合
-考试不考好像，嘻嘻。
+### Map - 双列集合
+
+Map 是存储键值对（key-value）的集合，每个键唯一，值可重复。
+
+#### 基本特点
+- **键值对结构**：每个元素包含一个键和一个值
+- **键唯一性**：Map 中的键不能重复
+- **值可重复**：不同的键可以对应相同的值
+- **无序性**：大部分 Map 实现不保证顺序（除了 LinkedHashMap、TreeMap）
+
+#### 常用实现类
+
+| 实现类 | 特点 | 适用场景 |
+|--------|------|----------|
+| HashMap | 无序，查询快，线程不安全 | 最常用的 Map 实现 |
+| LinkedHashMap | 有序（插入顺序），查询快 | 需要保持插入顺序时 |
+| TreeMap | 按键排序（自然顺序或自定义比较器） | 需要按键排序时 |
+| Hashtable | 线程安全，性能较低 | 多线程环境（已被 ConcurrentHashMap 替代） |
+
+#### 基本操作
+
+```java
+// 创建 Map
+Map<String, Integer> map = new HashMap<>();
+
+// 添加元素
+map.put("Apple", 10);
+map.put("Banana", 20);
+map.put("Orange", 15);
+
+// 获取元素
+Integer count = map.get("Apple");  // 返回 10
+Integer count2 = map.getOrDefault("Grape", 0);  // 如果不存在返回默认值 0
+
+// 删除元素
+map.remove("Banana");
+
+// 检查键是否存在
+boolean hasKey = map.containsKey("Apple");  // true
+boolean hasValue = map.containsValue(10);     // true
+
+// 获取大小
+int size = map.size();  // 2
+
+// 清空集合
+map.clear();
+```
+
+#### 遍历方式
+
+**1. 遍历键**
+```java
+for (String key : map.keySet()) {
+    System.out.println(key + ": " + map.get(key));
+}
+```
+
+**2. 遍历值**
+```java
+for (Integer value : map.values()) {
+    System.out.println(value);
+}
+```
+
+**3. 遍历键值对（推荐）**
+```java
+for (Map.Entry<String, Integer> entry : map.entrySet()) {
+    System.out.println(entry.getKey() + ": " + entry.getValue());
+}
+```
+
+**4. forEach 方法（Java 8+）**
+```java
+map.forEach((key, value) -> System.out.println(key + ": " + value));
+```
+
+#### 常用方法总结
+
+| 方法名 | 说明 |
+|--------|------|
+| put(K key, V value) | 添加或更新键值对 |
+| get(Object key) | 根据键获取值 |
+| getOrDefault(Object key, V defaultValue) | 获取值或默认值 |
+| remove(Object key) | 删除指定键的键值对 |
+| containsKey(Object key) | 检查是否包含指定键 |
+| containsValue(Object value) | 检查是否包含指定值 |
+| keySet() | 返回所有键的集合 |
+| values() | 返回所有值的集合 |
+| entrySet() | 返回所有键值对的集合 |
+| size() | 返回键值对数量 |
+| isEmpty() | 检查是否为空 |
+| clear() | 清空所有键值对 |
+
+#### 实际应用示例
+
+```java
+// 统计字符出现次数
+String text = "hello world";
+Map<Character, Integer> charCount = new HashMap<>();
+
+for (char c : text.toCharArray()) {
+    charCount.put(c, charCount.getOrDefault(c, 0) + 1);
+}
+
+// 结果: {h=1, e=1, l=3, o=2,  =1, w=1, r=1, d=1}
+```
+
+```java
+// 对象映射
+Map<String, Person> personMap = new HashMap<>();
+personMap.put("001", new Person("张三", 25));
+personMap.put("002", new Person("李四", 30));
+
+// 查找
+Person person = personMap.get("001");
+```
+
+#### 注意事项
+1. **键的正确性**：作为键的对象应该正确实现 `equals()` 和 `hashCode()` 方法
+2. **null 值**：HashMap 允许一个 null 键和多个 null 值
+3. **线程安全**：多线程环境下使用 `ConcurrentHashMap` 或 `Collections.synchronizedMap()`
+4. **性能考虑**：选择合适的 Map 实现类以获得最佳性能
+
+## 集合工具类
+我来详细解释Java中Arrays和Collections的区别：
+
+## Arrays和Collections的主要区别
+
+### 基本概念
+
+**Arrays类**：
+- 位于`java.util`包中
+- 是一个工具类，用于操作数组（包括基本类型数组和对象数组）
+- 提供了静态方法来排序、搜索、比较、填充数组等
+
+**Collections类**：
+- 位于`java.util`包中
+- 是一个工具类，用于操作集合（Collection框架）
+- 提供了静态方法来排序、搜索、同步、不可修改集合等
+
+### 操作对象不同
+
+```java
+// Arrays操作数组
+int[] array = {3, 1, 4, 1, 5};
+Arrays.sort(array);                    // 排序数组
+int index = Arrays.binarySearch(array, 4); // 二分查找
+
+// Collections操作集合
+List<Integer> list = new ArrayList<>(Arrays.asList(3, 1, 4, 1, 5));
+Collections.sort(list);                 // 排序集合
+int index2 = Collections.binarySearch(list, 4); // 二分查找
+```
+
+### 功能对比表
+
+| 功能 | Arrays | Collections |
+|------|--------|-------------|
+| 排序 | `sort()` | `sort()` |
+| 搜索 | `binarySearch()` | `binarySearch()` |
+| 填充 | `fill()` | `fill()` |
+| 复制 | `copyOf()` | 无直接对应 |
+| 比较 | `equals()` | 无直接对应 |
+| 转换 | `asList()` | `toArray()` |
+| 同步 | 无 | `synchronizedXXX()` |
+| 不可修改 | 无 | `unmodifiableXXX()` |
+| 空集合 | 无 | `emptyXXX()` |
+| 单元素集合 | 无 | `singletonXXX()` |
+
+
+### 总结
+
+| 特性 | Arrays | Collections |
+|------|--------|-------------|
+| 操作对象 | 数组（基本类型和对象） | 集合框架对象 |
+| 方法类型 | 静态方法 | 静态方法 |
+| 主要功能 | 数组操作（排序、搜索、复制等） | 集合操作（排序、同步、包装等） |
+| 线程安全 | 不提供线程安全方法 | 提供synchronizedXXX()方法 |
+| 不可修改 | 不支持 | 提供unmodifiableXXX()方法 |
+| 特殊集合 | 无 | 提供emptyXXX()、singletonXXX()等 |
 
 
 # GUI编程
