@@ -11,14 +11,6 @@ public class t3 {
                 setBasicGui();
             }
         });
-
-        // new Thread(new Runnable() {
-        //     @Override
-        //     public void run() {
-        //         // 这里可以放置需要在后台运行的代码
-        //         setBasicGui();
-        //     }
-        // }).start();
     }
 
     public static void setBasicGui() {

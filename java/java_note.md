@@ -408,6 +408,18 @@ java提供两套GUI编程包
     `panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));`
     `panel.add(new JButton("Button 1"));`
 
+## 线程启动
+```java
+SwingUtilities.invokeLater(new Runnable() {
+	public void run() {
+		new Main().setVisible(true);
+	}
+});
+
+SwingUtilities.invokeLater(() -> {
+	new Main().setVisible(true);
+});
+```
 ## 事件监听
 常用的有两个事件监听器：
 - 点击事件监听
@@ -472,15 +484,7 @@ clearButton.addActionListener(e -> {
 });
 ```
 3. 事件源合而为一
-```java
-//与事件源合二为一
-        JButton exitButton = new JButton("退出"){
-            @Override
-            protected void fireActionPerformed(ActionEvent event) {
-                System.exit(0);
-            }
-        };
-```
+
 ## 示例代码
 
 代码太长了，直接贴个文件得了
