@@ -316,9 +316,7 @@ Person person = personMap.get("001");
 3. **线程安全**：多线程环境下使用 `ConcurrentHashMap` 或 `Collections.synchronizedMap()`
 4. **性能考虑**：选择合适的 Map 实现类以获得最佳性能
 
-## 集合工具类
-我来详细解释Java中Arrays和Collections的区别：
-
+# 集合工具类
 ## Arrays和Collections的主要区别
 
 ### 基本概念
@@ -362,18 +360,61 @@ int index2 = Collections.binarySearch(list, 4); // 二分查找
 | 空集合 | 无 | `emptyXXX()` |
 | 单元素集合 | 无 | `singletonXXX()` |
 
+### 自定义类型的sort排序
+1. 传入新的comparator
+```java
+Collections.sort(list2, new Comparator<Person>() {
+    @Override
+    public int compare(Person p1, Person p2) {
+        return p1.getName().compareTo(p2.getName());
+    }
+});
 
-### 总结
+//可以用lambda简化
+Collections.sort(list3, (p1, p2) -> p1.getAge() - p2.getAge());
+/* 
+p1 - p2 = 升序（从小到大）
+p2 - p1 = 降序（从大到小）
+*/
+```
 
-| 特性 | Arrays | Collections |
-|------|--------|-------------|
-| 操作对象 | 数组（基本类型和对象） | 集合框架对象 |
-| 方法类型 | 静态方法 | 静态方法 |
-| 主要功能 | 数组操作（排序、搜索、复制等） | 集合操作（排序、同步、包装等） |
-| 线程安全 | 不提供线程安全方法 | 提供synchronizedXXX()方法 |
-| 不可修改 | 不支持 | 提供unmodifiableXXX()方法 |
-| 特殊集合 | 无 | 提供emptyXXX()、singletonXXX()等 |
+2. 实现comparable接口
+```java
+class Person implements Comparable<Person> {
+    private String name;
+    private int age;
+    
+    // 重写compareTo方法，定义自然排序规则
+    @Override
+    public int compareTo(Person other) {
+        // 按年龄升序排序
+        return this.age - other.age;
+    }
+}
+```
 
+### 自定义类型的binarySearch
+需要重写Comparable接口中的compareTo方法，只有当其返回0的时候，binarySearch才认为找到了这个元素
+```java
+class Person implements Comparable<Person> {
+    private String name;
+    private int age;
+
+    @Override
+    public int compareTo(Person other) {
+        // 先按年龄比较
+        int ageCompare = Integer.compare(this.age, other.age);
+        if (ageCompare != 0) {
+            return ageCompare;
+        }
+        // 年龄相同再按姓名比较
+        return this.name.compareTo(other.name);
+    }
+}
+```
+
+`int idx=Collections.binarySearch(people, new Person("赵六", 25))`
+如果idx为负数，表示未排序。
 
 # GUI编程
 企业几乎不用java来写图形界面
@@ -394,17 +435,13 @@ java提供两套GUI编程包
 ## 布局管理器
 目前常见的有四种
 1. FlowLayout，流式布局管理
-    ```java
-    JLabel label3=new JLabel("请输入一元二次方程的系数c：");
-    jf.add(label3);
-    ```
-2. BorderLayout，将容器划分为东、南、西、北、中五个区域
+2. BorderLayout，将容器划分为东、南、西、北、中五个区域，是JFrame默认的布局管理器
    `jf.add(new Button("请输入一元二次方程的系数a："),BorderLayout.NORTH);`
 3. GridLayout，网格布局管理器
    `jf.setLayout(new GridLayout(2,3));`
    `jf.add(new JButton("请输入一元二次方程的系数a："));`
 4. BoxLayout,盒子布局，可以做竖向布局，配合panel使用
-    ` JPanel panel=new JPanel();`
+    `JPanel panel=new JPanel();`
     `panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));`
     `panel.add(new JButton("Button 1"));`
 

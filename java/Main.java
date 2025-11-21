@@ -14,6 +14,7 @@ public class Main extends JFrame {
 		setTitle("电话簿");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(300, 300);
+		setLayout(new BorderLayout());
 		// 初始化组件
 		JTextField name = new JTextField();
 		JTextField company = new JTextField();
