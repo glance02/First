@@ -1,0 +1,11 @@
+{
+	"inputs": [
+		{
+			"id": "Authorization",
+			"type": "promptString",
+			"description": "Authentication token (PAT or App token)",
+			"password": true
+		}
+	],
+	"servers": {}
+}
