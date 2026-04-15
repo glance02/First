@@ -42,7 +42,7 @@ python experiments/pv_forecast.py \
   --resample-rule 15min \
   --add-time-features \
   --window-size 16 \
-  --horizon 4 \
+  --horizon 2 \
   --epochs 25 \
   --hidden-size 64 \
   --output-dir artifacts/pv_experiment_light \

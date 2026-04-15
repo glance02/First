@@ -60,7 +60,7 @@ python experiments/pv_forecast.py \
   --resample-rule 15min \
   --add-time-features \
   --window-size 16 \
-  --horizon 4 \
+  --horizon 2 \
   --epochs 25 \
   --hidden-size 64 \
   --output-dir artifacts/pv_experiment_light \
@@ -73,10 +73,10 @@ python experiments/pv_forecast.py \
 
 - 先把 1 分钟数据重采样为 15 分钟数据。
 - 使用过去 `16` 个时间步，也就是过去 `4` 小时的数据。
-- 预测未来 `4` 个时间步，也就是未来 `1` 小时的功率。
+- 预测未来 `2` 个时间步，也就是未来 `30` 分钟的功率。
 - 自动加入昼夜周期和周内周期的时间特征。
 
-这样做的原因是：对原始 1 分钟单变量数据而言，`Persistence` 基线会非常强，深度学习模型不容易体现优势；而在更接近实际调度需求的 1 小时 ahead 设置下，模型差异更有分析价值。
+这样做的原因是：对原始 1 分钟单变量数据而言，`Persistence` 基线会非常强，深度学习模型不容易体现优势；而在 `15min` 重采样后的 `30` 分钟 ahead 设置下，图形会比 `1` 小时 ahead 更平滑，也更适合课程报告展示。
 
 ### 1. 无真实数据时的自测
 
