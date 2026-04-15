@@ -1,0 +1,787 @@
+from __future__ import annotations
+
+import argparse
+import copy
+import math
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable
+
+import numpy as np
+import pandas as pd
+import torch
+from PIL import Image, ImageDraw, ImageFont
+from torch import nn
+from torch.utils.data import DataLoader, TensorDataset
+
+
+DEFAULT_OUTPUT_DIR = Path("artifacts/pv_experiment")
+DEFAULT_SEED = 42
+EPS = 1e-8
+
+
+@dataclass
+class Standardizer:
+    mean: np.ndarray
+    std: np.ndarray
+
+    @classmethod
+    def fit(cls, values: np.ndarray) -> "Standardizer":
+        mean = values.mean(axis=0)
+        std = values.std(axis=0)
+        std = np.where(std < EPS, 1.0, std)
+        return cls(mean=mean, std=std)
+
+    def transform(self, values: np.ndarray) -> np.ndarray:
+        return (values - self.mean) / self.std
+
+    def inverse_transform(self, values: np.ndarray) -> np.ndarray:
+        return values * self.std + self.mean
+
+
+class MLPRegressor(nn.Module):
+    def __init__(self, input_size: int, hidden_size: int) -> None:
+        super().__init__()
+        mid_size = max(hidden_size // 2, 16)
+        self.network = nn.Sequential(
+            nn.Linear(input_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, mid_size),
+            nn.ReLU(),
+            nn.Linear(mid_size, 1),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        flattened = x.reshape(x.size(0), -1)
+        return self.network(flattened).squeeze(-1)
+
+
+class LSTMRegressor(nn.Module):
+    def __init__(self, num_features: int, hidden_size: int) -> None:
+        super().__init__()
+        self.lstm = nn.LSTM(
+            input_size=num_features,
+            hidden_size=hidden_size,
+            num_layers=1,
+            batch_first=True,
+        )
+        self.output = nn.Linear(hidden_size, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        encoded, _ = self.lstm(x)
+        return self.output(encoded[:, -1, :]).squeeze(-1)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run a compact photovoltaic power forecasting experiment."
+    )
+    parser.add_argument("--data-path", type=str, default="")
+    parser.add_argument("--time-col", type=str, default="timestamp")
+    parser.add_argument("--target-col", type=str, default="power")
+    parser.add_argument("--feature-cols", type=str, default="")
+    parser.add_argument("--window-size", type=int, default=8)
+    parser.add_argument("--horizon", type=int, default=1)
+    parser.add_argument("--epochs", type=int, default=40)
+    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--hidden-size", type=int, default=64)
+    parser.add_argument("--resample-rule", type=str, default="")
+    parser.add_argument("--add-time-features", action="store_true")
+    parser.add_argument("--device", type=str, default="auto")
+    parser.add_argument("--output-dir", type=str, default=str(DEFAULT_OUTPUT_DIR))
+    parser.add_argument("--demo-synthetic", action="store_true")
+    parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    return parser.parse_args()
+
+
+def set_seed(seed: int) -> None:
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def parse_feature_columns(feature_cols: str) -> list[str]:
+    if not feature_cols:
+        return []
+    return [column.strip() for column in feature_cols.split(",") if column.strip()]
+
+
+def detect_device(requested: str) -> torch.device:
+    requested = requested.lower()
+    if requested == "auto":
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        return torch.device("cpu")
+    if requested == "cuda" and not torch.cuda.is_available():
+        print("CUDA is unavailable. Falling back to CPU.")
+        return torch.device("cpu")
+    return torch.device(requested)
+
+
+def generate_synthetic_frame(num_days: int = 40, freq: str = "15min") -> pd.DataFrame:
+    timestamps = pd.date_range("2024-01-01", periods=num_days * 24 * 4, freq=freq)
+    hours = timestamps.hour + timestamps.minute / 60.0
+    daylight_curve = np.clip(1.0 - ((hours - 12.0) / 6.0) ** 2, 0.0, None)
+    day_index = (timestamps.dayofyear - timestamps.dayofyear.min()).to_numpy(dtype=np.float32)
+    seasonal = 0.95 + 0.08 * np.sin(2 * np.pi * day_index / 30.0)
+    cloud = 0.88 + 0.12 * np.sin(2 * np.pi * np.arange(len(timestamps)) / (24 * 4 * 5))
+    cloud += np.random.normal(0, 0.05, len(timestamps))
+    cloud = np.clip(cloud, 0.45, 1.15)
+
+    irradiance = 850 * daylight_curve * seasonal * cloud
+    temperature = 16 + 10 * daylight_curve + 4 * np.sin(2 * np.pi * day_index / 20.0)
+    humidity = 70 - 18 * daylight_curve + np.random.normal(0, 2.0, len(timestamps))
+    noise = np.random.normal(0, 18, len(timestamps))
+    power = np.clip(irradiance * 0.22 + noise, 0, None)
+
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "power": power.astype(np.float32),
+            "irradiance": irradiance.astype(np.float32),
+            "temperature": temperature.astype(np.float32),
+            "humidity": humidity.astype(np.float32),
+        }
+    )
+
+
+def load_frame(args: argparse.Namespace, extra_features: list[str]) -> tuple[pd.DataFrame, str]:
+    if args.demo_synthetic:
+        return generate_synthetic_frame(), "synthetic PV-like dataset"
+
+    if not args.data_path:
+        raise ValueError("Provide --data-path or enable --demo-synthetic.")
+
+    path = Path(args.data_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Data file not found: {path}")
+
+    return pd.read_csv(path), path.name
+
+
+def find_irradiance_column(columns: Iterable[str]) -> str | None:
+    normalized = {column.lower(): column for column in columns}
+    for candidate in ("irradiance", "ghi", "solar_irradiance", "radiation"):
+        if candidate in normalized:
+            return normalized[candidate]
+    return None
+
+
+def prepare_frame(
+    frame: pd.DataFrame,
+    time_col: str,
+    target_col: str,
+    extra_features: list[str],
+) -> pd.DataFrame:
+    required = [time_col, target_col, *extra_features]
+    missing = [column for column in required if column not in frame.columns]
+    if missing:
+        raise KeyError(f"Missing required columns: {missing}")
+
+    prepared = frame.copy()
+    prepared[time_col] = pd.to_datetime(prepared[time_col], errors="coerce")
+    prepared = prepared.dropna(subset=[time_col]).drop_duplicates(subset=[time_col], keep="last")
+    prepared = prepared.sort_values(time_col).reset_index(drop=True)
+
+    for column in [target_col, *extra_features]:
+        prepared[column] = pd.to_numeric(prepared[column], errors="coerce")
+
+    prepared = prepared.dropna(subset=[target_col, *extra_features]).reset_index(drop=True)
+    if prepared.empty:
+        raise ValueError("No valid rows remain after preprocessing.")
+    return prepared
+
+
+def resample_frame(
+    frame: pd.DataFrame,
+    time_col: str,
+    value_cols: list[str],
+    rule: str,
+) -> pd.DataFrame:
+    if not rule:
+        return frame.copy()
+
+    resampled = (
+        frame.set_index(time_col)[value_cols]
+        .resample(rule)
+        .mean()
+        .dropna()
+        .reset_index()
+    )
+    if resampled.empty:
+        raise ValueError(f"Resampling with rule '{rule}' removed all rows.")
+    return resampled
+
+
+def add_time_features(frame: pd.DataFrame, time_col: str) -> tuple[pd.DataFrame, list[str]]:
+    enriched = frame.copy()
+    timestamp = pd.to_datetime(enriched[time_col])
+    minute_of_day = timestamp.dt.hour * 60 + timestamp.dt.minute
+    day_of_week = timestamp.dt.dayofweek
+
+    enriched["time_of_day_sin"] = np.sin(2 * np.pi * minute_of_day / (24 * 60)).astype(np.float32)
+    enriched["time_of_day_cos"] = np.cos(2 * np.pi * minute_of_day / (24 * 60)).astype(np.float32)
+    enriched["day_of_week_sin"] = np.sin(2 * np.pi * day_of_week / 7).astype(np.float32)
+    enriched["day_of_week_cos"] = np.cos(2 * np.pi * day_of_week / 7).astype(np.float32)
+
+    return enriched, [
+        "time_of_day_sin",
+        "time_of_day_cos",
+        "day_of_week_sin",
+        "day_of_week_cos",
+    ]
+
+
+def filter_night_segments(frame: pd.DataFrame, signal_col: str) -> pd.DataFrame:
+    signal = frame[signal_col].to_numpy(dtype=np.float32)
+    max_signal = float(np.nanmax(np.abs(signal)))
+    if max_signal <= EPS:
+        return frame.copy()
+
+    threshold = max(max_signal * 0.01, 1e-5)
+    rolling_max = (
+        pd.Series(np.abs(signal))
+        .rolling(window=5, center=True, min_periods=1)
+        .max()
+        .to_numpy(dtype=np.float32)
+    )
+    mask = rolling_max > threshold
+    filtered = frame.loc[mask].reset_index(drop=True)
+    if len(filtered) < max(64, int(len(frame) * 0.25)):
+        return frame.copy()
+    return filtered
+
+
+def split_frame(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    total = len(frame)
+    train_end = int(total * 0.70)
+    val_end = int(total * 0.85)
+    train = frame.iloc[:train_end].reset_index(drop=True)
+    val = frame.iloc[train_end:val_end].reset_index(drop=True)
+    test = frame.iloc[val_end:].reset_index(drop=True)
+    return train, val, test
+
+
+def ensure_split_length(frame: pd.DataFrame, split_name: str, window_size: int, horizon: int) -> None:
+    minimum = window_size + horizon + 2
+    if len(frame) < minimum:
+        raise ValueError(
+            f"{split_name} split is too short after preprocessing. "
+            f"Need at least {minimum} rows, got {len(frame)}."
+        )
+
+
+def create_sequences(
+    frame: pd.DataFrame,
+    feature_cols: list[str],
+    target_col: str,
+    time_col: str,
+    window_size: int,
+    horizon: int,
+    feature_scaler: Standardizer,
+    target_scaler: Standardizer,
+) -> dict[str, np.ndarray]:
+    raw_features = frame[feature_cols].to_numpy(dtype=np.float32)
+    raw_target = frame[target_col].to_numpy(dtype=np.float32)
+    timestamp_series = pd.to_datetime(frame[time_col]).reset_index(drop=True)
+    timestamps = timestamp_series.astype("string").to_numpy()
+
+    scaled_features = feature_scaler.transform(raw_features.astype(np.float32)).astype(np.float32)
+    scaled_target = target_scaler.transform(raw_target.reshape(-1, 1)).astype(np.float32).reshape(-1)
+
+    x_scaled, x_raw, y_scaled, y_raw, ts = [], [], [], [], []
+
+    deltas = timestamp_series.diff().dropna()
+    positive_deltas = deltas[deltas > pd.Timedelta(0)]
+    if positive_deltas.empty:
+        segment_ids = pd.Series(np.zeros(len(frame), dtype=np.int32))
+    else:
+        expected_delta = positive_deltas.mode().iloc[0]
+        gap_threshold = expected_delta * 1.5
+        segment_breaks = timestamp_series.diff() > gap_threshold
+        segment_ids = segment_breaks.fillna(False).cumsum()
+
+    for _, segment_index in segment_ids.groupby(segment_ids).groups.items():
+        segment_index = np.asarray(segment_index, dtype=np.int64)
+        if len(segment_index) < window_size + horizon:
+            continue
+
+        for end in range(window_size, len(segment_index) - horizon + 1):
+            start = end - window_size
+            target_index = end + horizon - 1
+
+            window_indices = segment_index[start:end]
+            target_row = segment_index[target_index]
+
+            x_scaled.append(scaled_features[window_indices])
+            x_raw.append(raw_features[window_indices])
+            y_scaled.append(scaled_target[target_row])
+            y_raw.append(raw_target[target_row])
+            ts.append(timestamps[target_row])
+
+    return {
+        "x_scaled": np.asarray(x_scaled, dtype=np.float32),
+        "x_raw": np.asarray(x_raw, dtype=np.float32),
+        "y_scaled": np.asarray(y_scaled, dtype=np.float32),
+        "y_raw": np.asarray(y_raw, dtype=np.float32),
+        "timestamp": np.asarray(ts, dtype=object),
+    }
+
+
+def ensure_nonempty_sequences(sequence_dict: dict[str, np.ndarray], split_name: str) -> None:
+    if len(sequence_dict["x_scaled"]) == 0:
+        raise ValueError(
+            f"{split_name} split produced zero valid sequences. "
+            "Try reducing --window-size/--horizon or using a coarser --resample-rule."
+        )
+
+
+def make_loader(x: np.ndarray, y: np.ndarray, batch_size: int, shuffle: bool) -> DataLoader:
+    dataset = TensorDataset(torch.from_numpy(x), torch.from_numpy(y))
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+
+
+def inverse_target(target_scaler: Standardizer, values: np.ndarray) -> np.ndarray:
+    values = np.asarray(values, dtype=np.float32).reshape(-1, 1)
+    return target_scaler.inverse_transform(values).reshape(-1)
+
+
+def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
+    y_true = np.asarray(y_true, dtype=np.float64)
+    y_pred = np.asarray(y_pred, dtype=np.float64)
+    mae = float(np.mean(np.abs(y_true - y_pred)))
+    rmse = float(np.sqrt(np.mean(np.square(y_true - y_pred))))
+    threshold = max(float(np.max(np.abs(y_true))) * 0.05, 1e-3)
+    valid = np.abs(y_true) >= threshold
+    if not np.any(valid):
+        valid = np.abs(y_true) >= 1e-3
+    denominator = np.clip(np.abs(y_true[valid]), threshold, None)
+    mape = float(np.mean(np.abs((y_true[valid] - y_pred[valid]) / denominator)) * 100.0)
+    return {"mae": mae, "rmse": rmse, "mape": mape}
+
+
+def predict_scaled(model: nn.Module, loader: DataLoader, device: torch.device) -> tuple[np.ndarray, np.ndarray]:
+    model.eval()
+    preds, targets = [], []
+    with torch.inference_mode():
+        for batch_x, batch_y in loader:
+            batch_x = batch_x.to(device)
+            pred = model(batch_x).cpu().numpy()
+            preds.append(pred)
+            targets.append(batch_y.numpy())
+    return np.concatenate(preds), np.concatenate(targets)
+
+
+def train_model(
+    model: nn.Module,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    target_scaler: Standardizer,
+    epochs: int,
+    device: torch.device,
+) -> nn.Module:
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.MSELoss()
+    patience = 8
+    best_rmse = math.inf
+    best_state: dict[str, torch.Tensor] | None = None
+    stale_epochs = 0
+
+    model.to(device)
+
+    for epoch in range(1, epochs + 1):
+        model.train()
+        running_loss = 0.0
+        sample_count = 0
+        for batch_x, batch_y in train_loader:
+            batch_x = batch_x.to(device)
+            batch_y = batch_y.to(device)
+
+            optimizer.zero_grad()
+            pred = model(batch_x)
+            loss = criterion(pred, batch_y)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item() * batch_x.size(0)
+            sample_count += batch_x.size(0)
+
+        val_pred_scaled, val_true_scaled = predict_scaled(model, val_loader, device)
+        val_pred = inverse_target(target_scaler, val_pred_scaled)
+        val_true = inverse_target(target_scaler, val_true_scaled)
+        val_rmse = compute_metrics(val_true, val_pred)["rmse"]
+        train_loss = running_loss / max(sample_count, 1)
+        print(
+            f"Epoch {epoch:03d} | train_loss={train_loss:.5f} | "
+            f"val_rmse={val_rmse:.5f}"
+        )
+
+        if val_rmse + 1e-6 < best_rmse:
+            best_rmse = val_rmse
+            best_state = copy.deepcopy(model.state_dict())
+            stale_epochs = 0
+        else:
+            stale_epochs += 1
+            if stale_epochs >= patience:
+                print(f"Early stopping at epoch {epoch}.")
+                break
+
+    if best_state is None:
+        raise RuntimeError("Training did not produce a valid checkpoint.")
+
+    model.load_state_dict(best_state)
+    return model
+
+
+def evaluate_neural_model(
+    model: nn.Module,
+    test_loader: DataLoader,
+    target_scaler: Standardizer,
+    device: torch.device,
+) -> tuple[np.ndarray, np.ndarray]:
+    pred_scaled, true_scaled = predict_scaled(model, test_loader, device)
+    pred = inverse_target(target_scaler, pred_scaled)
+    true = inverse_target(target_scaler, true_scaled)
+    return pred, true
+
+
+def save_plot_with_matplotlib(plot_path: Path, plot_frame: pd.DataFrame) -> bool:
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        return False
+
+    plt.figure(figsize=(12, 6))
+    for column, color in [
+        ("actual", "#1f77b4"),
+        ("persistence", "#ff7f0e"),
+        ("mlp", "#2ca02c"),
+        ("lstm", "#d62728"),
+    ]:
+        plt.plot(
+            plot_frame["timestamp"],
+            plot_frame[column],
+            label=column.upper(),
+            linewidth=1.8,
+            color=color,
+        )
+
+    plt.title("PV Power Forecasting on Test Window")
+    plt.xlabel("Timestamp")
+    plt.ylabel("Power")
+    plt.xticks(rotation=30)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(plot_path, dpi=200)
+    plt.close()
+    return True
+
+
+def downsample_frame(frame: pd.DataFrame, max_points: int = 220) -> pd.DataFrame:
+    if len(frame) <= max_points:
+        return frame.reset_index(drop=True)
+    indices = np.linspace(0, len(frame) - 1, max_points).astype(int)
+    return frame.iloc[indices].reset_index(drop=True)
+
+
+def save_plot_with_pillow(plot_path: Path, plot_frame: pd.DataFrame) -> None:
+    width, height = 1400, 800
+    margin_left, margin_right, margin_top, margin_bottom = 100, 80, 80, 100
+    image = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default()
+
+    plot_frame = downsample_frame(plot_frame)
+    x_values = np.arange(len(plot_frame), dtype=np.float32)
+    series = {
+        "actual": ("#1f77b4", plot_frame["actual"].to_numpy(dtype=np.float32)),
+        "persistence": ("#ff7f0e", plot_frame["persistence"].to_numpy(dtype=np.float32)),
+        "mlp": ("#2ca02c", plot_frame["mlp"].to_numpy(dtype=np.float32)),
+        "lstm": ("#d62728", plot_frame["lstm"].to_numpy(dtype=np.float32)),
+    }
+
+    y_min = min(float(values.min()) for _, values in series.values())
+    y_max = max(float(values.max()) for _, values in series.values())
+    if math.isclose(y_min, y_max):
+        y_max = y_min + 1.0
+    y_pad = (y_max - y_min) * 0.08
+    y_min -= y_pad
+    y_max += y_pad
+
+    def to_canvas_x(index: float) -> float:
+        span = max(len(plot_frame) - 1, 1)
+        return margin_left + index / span * (width - margin_left - margin_right)
+
+    def to_canvas_y(value: float) -> float:
+        return margin_top + (y_max - value) / (y_max - y_min) * (height - margin_top - margin_bottom)
+
+    draw.rectangle(
+        [(margin_left, margin_top), (width - margin_right, height - margin_bottom)],
+        outline="#444444",
+        width=2,
+    )
+
+    for step in range(6):
+        y_tick = y_min + (y_max - y_min) * step / 5
+        y_pos = to_canvas_y(y_tick)
+        draw.line(
+            [(margin_left, y_pos), (width - margin_right, y_pos)],
+            fill="#dddddd",
+            width=1,
+        )
+        draw.text((15, y_pos - 7), f"{y_tick:.1f}", fill="black", font=font)
+
+    for name, (color, values) in series.items():
+        points = [(to_canvas_x(i), to_canvas_y(float(value))) for i, value in zip(x_values, values)]
+        draw.line(points, fill=color, width=3)
+
+    draw.text((width / 2 - 110, 20), "PV Power Forecasting on Test Window", fill="black", font=font)
+    draw.text((width / 2 - 25, height - 50), "Timestamp", fill="black", font=font)
+    draw.text((20, margin_top - 30), "Power", fill="black", font=font)
+
+    legend_x = width - 260
+    legend_y = 40
+    for idx, (name, (color, _)) in enumerate(series.items()):
+        y = legend_y + idx * 24
+        draw.line([(legend_x, y + 6), (legend_x + 28, y + 6)], fill=color, width=3)
+        draw.text((legend_x + 40, y), name.upper(), fill="black", font=font)
+
+    image.save(plot_path)
+
+
+def save_prediction_plot(plot_path: Path, predictions: pd.DataFrame) -> None:
+    plot_frame = predictions.iloc[: min(len(predictions), 192)].copy()
+    if save_plot_with_matplotlib(plot_path, plot_frame):
+        return
+    save_plot_with_pillow(plot_path, plot_frame)
+
+
+def build_report_snippet(
+    metrics_df: pd.DataFrame,
+    dataset_label: str,
+    window_size: int,
+    horizon: int,
+    config_summary: str,
+) -> str:
+    metrics_sorted = metrics_df.sort_values("rmse").reset_index(drop=True)
+    best_model = metrics_sorted.loc[0, "model"]
+    lstm_rmse = float(metrics_df.loc[metrics_df["model"] == "lstm", "rmse"].iloc[0])
+    persistence_rmse = float(metrics_df.loc[metrics_df["model"] == "persistence", "rmse"].iloc[0])
+    improvement = (persistence_rmse - lstm_rmse) / max(persistence_rmse, EPS) * 100.0
+
+    lines = [
+        "### 实验结果摘要",
+        "",
+        f"本实验使用 `{dataset_label}` 数据，采用长度为 `{window_size}` 的历史窗口预测未来 `{horizon}` 个时间步后的光伏功率。",
+        "对比模型包括 Persistence、MLP 和 LSTM，评价指标为 MAE、RMSE 与 MAPE。",
+        f"实验设置：{config_summary}。",
+        "",
+        "| Model | MAE | RMSE | MAPE(%) |",
+        "| --- | ---: | ---: | ---: |",
+    ]
+
+    for row in metrics_sorted.itertuples(index=False):
+        lines.append(
+            f"| {row.model.upper()} | {row.mae:.4f} | {row.rmse:.4f} | {row.mape:.2f} |"
+        )
+
+    lines.extend(["", f"测试结果显示，`{best_model.upper()}` 在 RMSE 指标上表现最好。"])
+
+    if best_model == "lstm" and improvement > 0:
+        lines.append(
+            f"相较于 Persistence 基线，LSTM 的 RMSE 下降约 `{improvement:.2f}%`，"
+            "说明其能够更好地刻画光伏功率的时间依赖性。"
+        )
+    else:
+        lines.append(
+            "本次实验中 LSTM 与基线模型差距有限，这通常与数据规模、输入特征数量、"
+            "天气突变程度以及夜间样本处理方式有关。"
+        )
+
+    lines.extend(
+        [
+            "建议将上表替换到报告的“表3”，并把同目录下的 `prediction_curve.png` 作为“图2”插入。",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def main() -> int:
+    args = parse_args()
+    set_seed(args.seed)
+    device = detect_device(args.device)
+
+    extra_features = parse_feature_columns(args.feature_cols)
+    raw_frame, dataset_label = load_frame(args, extra_features)
+    if args.demo_synthetic and not extra_features:
+        extra_features = ["irradiance", "temperature", "humidity"]
+    frame = prepare_frame(raw_frame, args.time_col, args.target_col, extra_features)
+    frame = resample_frame(
+        frame,
+        args.time_col,
+        [args.target_col, *extra_features],
+        args.resample_rule,
+    )
+
+    time_feature_cols: list[str] = []
+    if args.add_time_features:
+        frame, time_feature_cols = add_time_features(frame, args.time_col)
+
+    irradiance_col = find_irradiance_column(frame.columns)
+    signal_col = irradiance_col or args.target_col
+    frame = filter_night_segments(frame, signal_col)
+
+    feature_cols = [args.target_col, *extra_features, *time_feature_cols]
+    train_frame, val_frame, test_frame = split_frame(frame)
+
+    for split_name, split_frame_data in [
+        ("train", train_frame),
+        ("validation", val_frame),
+        ("test", test_frame),
+    ]:
+        ensure_split_length(split_frame_data, split_name, args.window_size, args.horizon)
+
+    feature_scaler = Standardizer.fit(train_frame[feature_cols].to_numpy(dtype=np.float32))
+    target_scaler = Standardizer.fit(train_frame[[args.target_col]].to_numpy(dtype=np.float32))
+
+    train_seq = create_sequences(
+        train_frame,
+        feature_cols,
+        args.target_col,
+        args.time_col,
+        args.window_size,
+        args.horizon,
+        feature_scaler,
+        target_scaler,
+    )
+    val_seq = create_sequences(
+        val_frame,
+        feature_cols,
+        args.target_col,
+        args.time_col,
+        args.window_size,
+        args.horizon,
+        feature_scaler,
+        target_scaler,
+    )
+    test_seq = create_sequences(
+        test_frame,
+        feature_cols,
+        args.target_col,
+        args.time_col,
+        args.window_size,
+        args.horizon,
+        feature_scaler,
+        target_scaler,
+    )
+
+    ensure_nonempty_sequences(train_seq, "train")
+    ensure_nonempty_sequences(val_seq, "validation")
+    ensure_nonempty_sequences(test_seq, "test")
+
+    train_loader = make_loader(train_seq["x_scaled"], train_seq["y_scaled"], args.batch_size, True)
+    val_loader = make_loader(val_seq["x_scaled"], val_seq["y_scaled"], args.batch_size, False)
+    test_loader = make_loader(test_seq["x_scaled"], test_seq["y_scaled"], args.batch_size, False)
+
+    mlp_model = MLPRegressor(
+        input_size=args.window_size * len(feature_cols),
+        hidden_size=args.hidden_size,
+    )
+    lstm_model = LSTMRegressor(
+        num_features=len(feature_cols),
+        hidden_size=args.hidden_size,
+    )
+
+    print(f"Using device: {device}")
+    print(f"Dataset label: {dataset_label}")
+    print(f"Rows after preprocessing: {len(frame)}")
+    print(f"Feature columns: {feature_cols}")
+
+    mlp_model = train_model(
+        mlp_model,
+        train_loader,
+        val_loader,
+        target_scaler,
+        args.epochs,
+        device,
+    )
+    lstm_model = train_model(
+        lstm_model,
+        train_loader,
+        val_loader,
+        target_scaler,
+        args.epochs,
+        device,
+    )
+
+    mlp_pred, y_true = evaluate_neural_model(mlp_model, test_loader, target_scaler, device)
+    lstm_pred, _ = evaluate_neural_model(lstm_model, test_loader, target_scaler, device)
+    persistence_pred = test_seq["x_raw"][:, -1, 0]
+
+    metrics_rows = []
+    for model_name, prediction in [
+        ("persistence", persistence_pred),
+        ("mlp", mlp_pred),
+        ("lstm", lstm_pred),
+    ]:
+        metrics = compute_metrics(y_true, prediction)
+        metrics_rows.append({"model": model_name, **metrics})
+
+    metrics_df = pd.DataFrame(metrics_rows).sort_values("rmse").reset_index(drop=True)
+    predictions_df = pd.DataFrame(
+        {
+            "timestamp": test_seq["timestamp"],
+            "actual": y_true,
+            "persistence": persistence_pred,
+            "mlp": mlp_pred,
+            "lstm": lstm_pred,
+        }
+    )
+
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    config_bits = []
+    if args.resample_rule:
+        config_bits.append(f"resample={args.resample_rule}")
+    else:
+        config_bits.append("resample=none")
+    if time_feature_cols:
+        config_bits.append("time_features=on")
+    else:
+        config_bits.append("time_features=off")
+    config_bits.append(f"input_features={len(feature_cols)}")
+
+    metrics_path = output_dir / "metrics.csv"
+    predictions_path = output_dir / "predictions.csv"
+    plot_path = output_dir / "prediction_curve.png"
+    report_path = output_dir / "report_snippet.md"
+    checkpoint_path = output_dir / "best_lstm.pt"
+
+    metrics_df.to_csv(metrics_path, index=False)
+    predictions_df.to_csv(predictions_path, index=False)
+    save_prediction_plot(plot_path, predictions_df)
+    report_path.write_text(
+        build_report_snippet(
+            metrics_df,
+            dataset_label,
+            args.window_size,
+            args.horizon,
+            ", ".join(config_bits),
+        ),
+        encoding="utf-8-sig",
+    )
+    torch.save(lstm_model.state_dict(), checkpoint_path)
+
+    print(f"Saved metrics to: {metrics_path}")
+    print(f"Saved predictions to: {predictions_path}")
+    print(f"Saved plot to: {plot_path}")
+    print(f"Saved report snippet to: {report_path}")
+    print(f"Saved LSTM checkpoint to: {checkpoint_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
