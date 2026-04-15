@@ -41,10 +41,11 @@ python experiments/pv_forecast.py \
   --target-col power \
   --resample-rule 15min \
   --add-time-features \
-  --window-size 16 \
+  --window-size 20 \
   --horizon 2 \
-  --epochs 25 \
-  --hidden-size 64 \
+  --epochs 40 \
+  --batch-size 32 \
+  --hidden-size 128 \
   --output-dir artifacts/pv_experiment_light \
   --device cuda
 ```

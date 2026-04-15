@@ -87,6 +87,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hidden-size", type=int, default=64)
     parser.add_argument("--resample-rule", type=str, default="")
     parser.add_argument("--add-time-features", action="store_true")
+    parser.add_argument("--filter-night", action="store_true")
     parser.add_argument("--device", type=str, default="auto")
     parser.add_argument("--output-dir", type=str, default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--demo-synthetic", action="store_true")
@@ -117,6 +118,29 @@ def detect_device(requested: str) -> torch.device:
         print("CUDA is unavailable. Falling back to CPU.")
         return torch.device("cpu")
     return torch.device(requested)
+
+
+def load_preferred_font(size: int, bold: bool = False) -> ImageFont.ImageFont:
+    if bold:
+        candidates = [
+            Path(r"C:\Windows\Fonts\segoeuib.ttf"),
+            Path(r"C:\Windows\Fonts\arialbd.ttf"),
+            Path(r"C:\Windows\Fonts\calibrib.ttf"),
+        ]
+    else:
+        candidates = [
+            Path(r"C:\Windows\Fonts\segoeui.ttf"),
+            Path(r"C:\Windows\Fonts\arial.ttf"),
+            Path(r"C:\Windows\Fonts\calibri.ttf"),
+        ]
+
+    for font_path in candidates:
+        if font_path.exists():
+            try:
+                return ImageFont.truetype(str(font_path), size=size)
+            except OSError:
+                continue
+    return ImageFont.load_default()
 
 
 def generate_synthetic_frame(num_days: int = 40, freq: str = "15min") -> pd.DataFrame:
@@ -449,32 +473,131 @@ def evaluate_neural_model(
 def save_plot_with_matplotlib(plot_path: Path, plot_frame: pd.DataFrame) -> bool:
     try:
         import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
     except ImportError:
         return False
 
-    plt.figure(figsize=(12, 6))
-    for column, color in [
-        ("actual", "#1f77b4"),
-        ("persistence", "#ff7f0e"),
-        ("mlp", "#2ca02c"),
-        ("lstm", "#d62728"),
-    ]:
-        plt.plot(
-            plot_frame["timestamp"],
-            plot_frame[column],
-            label=column.upper(),
-            linewidth=1.8,
-            color=color,
+    styled = plot_frame.copy()
+    styled["timestamp"] = pd.to_datetime(styled["timestamp"])
+
+    fig, ax = plt.subplots(figsize=(14, 7.5), facecolor="#f7f8fc")
+    ax.set_facecolor("#ffffff")
+    segments = split_plot_segments(styled)
+
+    line_specs = [
+        ("actual", "#183a5a", 2.8, "-", None, 5),
+        ("persistence", "#f28e2b", 1.8, "--", 0.92, None),
+        ("mlp", "#59a14f", 1.8, "-.", 0.9, None),
+        ("lstm", "#d1495b", 2.4, "-", None, None),
+    ]
+    for column, color, width, linestyle, alpha, markevery in line_specs:
+        first_segment = True
+        for segment in segments:
+            kwargs: dict[str, object] = {
+                "label": column.upper() if first_segment else "_nolegend_",
+                "linewidth": width,
+                "color": color,
+                "linestyle": linestyle,
+                "zorder": 4 if column in {"actual", "lstm"} else 3,
+            }
+            if alpha is not None:
+                kwargs["alpha"] = alpha
+            if markevery is not None:
+                kwargs["marker"] = "o"
+                kwargs["markersize"] = 4
+                kwargs["markerfacecolor"] = color
+                kwargs["markeredgewidth"] = 0
+                kwargs["markevery"] = markevery
+            ax.plot(segment["timestamp"], segment[column], **kwargs)
+            first_segment = False
+
+    for segment in segments:
+        ax.fill_between(
+            pd.to_datetime(segment["timestamp"]),
+            segment["actual"].to_numpy(dtype=np.float64),
+            color="#183a5a",
+            alpha=0.06,
+            zorder=1,
         )
 
-    plt.title("PV Power Forecasting on Test Window")
-    plt.xlabel("Timestamp")
-    plt.ylabel("Power")
-    plt.xticks(rotation=30)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(plot_path, dpi=200)
-    plt.close()
+    ax.grid(axis="y", color="#d8dde7", linewidth=0.9, alpha=0.85)
+    ax.grid(axis="x", color="#eef1f6", linewidth=0.8, alpha=0.65)
+    ax.set_axisbelow(True)
+
+    locator = mdates.AutoDateLocator(minticks=6, maxticks=10)
+    formatter = mdates.ConciseDateFormatter(locator)
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(formatter)
+
+    ax.set_title(
+        "PV Power Forecasting on the Full Test Set",
+        loc="left",
+        fontsize=16,
+        fontweight="bold",
+        color="#183a5a",
+        pad=16,
+    )
+
+    time_start = styled["timestamp"].iloc[0].strftime("%Y-%m-%d %H:%M")
+    time_end = styled["timestamp"].iloc[-1].strftime("%Y-%m-%d %H:%M")
+    ax.text(
+        0.0,
+        1.02,
+        f"Test span: {time_start} to {time_end}",
+        transform=ax.transAxes,
+        fontsize=10.5,
+        color="#5b6574",
+    )
+
+    ax.set_xlabel("Timestamp", fontsize=11, color="#364152", labelpad=10)
+    ax.set_ylabel("Power", fontsize=11, color="#364152", labelpad=10)
+    ax.tick_params(axis="x", labelsize=9.5, colors="#4b5563")
+    ax.tick_params(axis="y", labelsize=9.5, colors="#4b5563")
+    ax.margins(x=0.015)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color("#c7cfdb")
+    ax.spines["bottom"].set_color("#c7cfdb")
+
+    legend = ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.12),
+        ncol=4,
+        frameon=False,
+        fontsize=10,
+        handlelength=2.8,
+        columnspacing=1.6,
+    )
+    for text in legend.get_texts():
+        text.set_color("#364152")
+
+    rmse_values = {
+        name.upper(): math.sqrt(float(np.mean(np.square(styled["actual"] - styled[name]))))
+        for name in ("persistence", "mlp", "lstm")
+    }
+    summary_text = "  ".join(
+        [
+            f"Persistence RMSE={rmse_values['PERSISTENCE']:.3f}",
+            f"MLP RMSE={rmse_values['MLP']:.3f}",
+            f"LSTM RMSE={rmse_values['LSTM']:.3f}",
+        ]
+    )
+    ax.text(
+        0.99,
+        0.03,
+        summary_text,
+        transform=ax.transAxes,
+        ha="right",
+        va="bottom",
+        fontsize=9,
+        color="#5b6574",
+        bbox={"boxstyle": "round,pad=0.35", "facecolor": "#f6f8fb", "edgecolor": "#d9e0ea"},
+    )
+
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.savefig(plot_path, dpi=220, facecolor=fig.get_facecolor(), bbox_inches="tight")
+    plt.close(fig)
     return True
 
 
@@ -485,24 +608,64 @@ def downsample_frame(frame: pd.DataFrame, max_points: int = 220) -> pd.DataFrame
     return frame.iloc[indices].reset_index(drop=True)
 
 
+def select_plot_frame(predictions: pd.DataFrame) -> pd.DataFrame:
+    candidate = predictions.copy()
+    candidate["timestamp"] = pd.to_datetime(candidate["timestamp"])
+    candidate = candidate.sort_values("timestamp").reset_index(drop=True)
+    return candidate
+
+
+def split_plot_segments(plot_frame: pd.DataFrame) -> list[pd.DataFrame]:
+    timestamps = pd.to_datetime(plot_frame["timestamp"]).reset_index(drop=True)
+    if len(timestamps) <= 1:
+        return [plot_frame.reset_index(drop=True)]
+
+    deltas = timestamps.diff().dropna()
+    positive_deltas = deltas[deltas > pd.Timedelta(0)]
+    if positive_deltas.empty:
+        return [plot_frame.reset_index(drop=True)]
+
+    expected_delta = positive_deltas.mode().iloc[0]
+    gap_threshold = expected_delta * 1.5
+    segment_breaks = timestamps.diff() > gap_threshold
+    segment_ids = segment_breaks.fillna(False).cumsum()
+    return [
+        plot_frame.iloc[np.asarray(indexes, dtype=np.int64)].reset_index(drop=True)
+        for _, indexes in segment_ids.groupby(segment_ids).groups.items()
+    ]
+
+
 def save_plot_with_pillow(plot_path: Path, plot_frame: pd.DataFrame) -> None:
-    width, height = 1400, 800
-    margin_left, margin_right, margin_top, margin_bottom = 100, 80, 80, 100
-    image = Image.new("RGB", (width, height), "white")
+    width, height = 1600, 900
+    margin_left, margin_right, margin_top, margin_bottom = 110, 80, 120, 120
+    image = Image.new("RGB", (width, height), "#f7f8fc")
     draw = ImageDraw.Draw(image)
-    font = ImageFont.load_default()
+    title_font = load_preferred_font(24, bold=True)
+    subtitle_font = load_preferred_font(15)
+    axis_font = load_preferred_font(16, bold=True)
+    tick_font = load_preferred_font(13)
+    legend_font = load_preferred_font(15, bold=True)
+    stats_font = load_preferred_font(13)
 
     plot_frame = downsample_frame(plot_frame)
-    x_values = np.arange(len(plot_frame), dtype=np.float32)
+    timestamps = pd.to_datetime(plot_frame["timestamp"])
+    raw_positions = timestamps.astype("int64").to_numpy(dtype=np.float64)
+    if len(raw_positions) == 0:
+        raise ValueError("Plot frame is empty.")
+    if np.allclose(raw_positions[0], raw_positions[-1]):
+        x_values = np.arange(len(plot_frame), dtype=np.float64)
+    else:
+        x_values = raw_positions
+    segments = split_plot_segments(plot_frame)
     series = {
-        "actual": ("#1f77b4", plot_frame["actual"].to_numpy(dtype=np.float32)),
-        "persistence": ("#ff7f0e", plot_frame["persistence"].to_numpy(dtype=np.float32)),
-        "mlp": ("#2ca02c", plot_frame["mlp"].to_numpy(dtype=np.float32)),
-        "lstm": ("#d62728", plot_frame["lstm"].to_numpy(dtype=np.float32)),
+        "actual": ("#183a5a", plot_frame["actual"].to_numpy(dtype=np.float32), 4),
+        "persistence": ("#f28e2b", plot_frame["persistence"].to_numpy(dtype=np.float32), 3),
+        "mlp": ("#59a14f", plot_frame["mlp"].to_numpy(dtype=np.float32), 3),
+        "lstm": ("#d1495b", plot_frame["lstm"].to_numpy(dtype=np.float32), 4),
     }
 
-    y_min = min(float(values.min()) for _, values in series.values())
-    y_max = max(float(values.max()) for _, values in series.values())
+    y_min = min(float(values.min()) for _, values, _ in series.values())
+    y_max = max(float(values.max()) for _, values, _ in series.values())
     if math.isclose(y_min, y_max):
         y_max = y_min + 1.0
     y_pad = (y_max - y_min) * 0.08
@@ -510,15 +673,35 @@ def save_plot_with_pillow(plot_path: Path, plot_frame: pd.DataFrame) -> None:
     y_max += y_pad
 
     def to_canvas_x(index: float) -> float:
-        span = max(len(plot_frame) - 1, 1)
-        return margin_left + index / span * (width - margin_left - margin_right)
+        span = max(float(x_values[-1] - x_values[0]), 1.0)
+        return margin_left + (index - x_values[0]) / span * (width - margin_left - margin_right)
 
     def to_canvas_y(value: float) -> float:
         return margin_top + (y_max - value) / (y_max - y_min) * (height - margin_top - margin_bottom)
 
+    def draw_centered_multiline(x_pos: float, y_pos: float, text: str, font: ImageFont.ImageFont) -> None:
+        bbox = draw.multiline_textbbox((0, 0), text, font=font, spacing=3, align="center")
+        text_width = bbox[2] - bbox[0]
+        draw.multiline_text(
+            (x_pos - text_width / 2, y_pos),
+            text,
+            fill="#4b5563",
+            font=font,
+            spacing=3,
+            align="center",
+        )
+
+    draw.rounded_rectangle(
+        [(30, 30), (width - 30, height - 30)],
+        radius=28,
+        fill="#ffffff",
+        outline="#e3e8f0",
+        width=2,
+    )
     draw.rectangle(
         [(margin_left, margin_top), (width - margin_right, height - margin_bottom)],
-        outline="#444444",
+        fill="#fbfcff",
+        outline="#ccd4df",
         width=2,
     )
 
@@ -527,31 +710,102 @@ def save_plot_with_pillow(plot_path: Path, plot_frame: pd.DataFrame) -> None:
         y_pos = to_canvas_y(y_tick)
         draw.line(
             [(margin_left, y_pos), (width - margin_right, y_pos)],
-            fill="#dddddd",
+            fill="#dde3ec",
             width=1,
         )
-        draw.text((15, y_pos - 7), f"{y_tick:.1f}", fill="black", font=font)
+        draw.text((20, y_pos - 9), f"{y_tick:.2f}", fill="#4b5563", font=tick_font)
 
-    for name, (color, values) in series.items():
-        points = [(to_canvas_x(i), to_canvas_y(float(value))) for i, value in zip(x_values, values)]
-        draw.line(points, fill=color, width=3)
+    tick_count = min(6, max(len(plot_frame), 2))
+    tick_times = pd.date_range(timestamps.iloc[0], timestamps.iloc[-1], periods=tick_count)
+    tick_positions = tick_times.astype("int64").to_numpy(dtype=np.float64)
+    for tick_time, tick_position in zip(tick_times, tick_positions):
+        x_pos = to_canvas_x(float(tick_position))
+        draw.line(
+            [(x_pos, margin_top), (x_pos, height - margin_bottom)],
+            fill="#eef2f7",
+            width=1,
+        )
+        tick_label = tick_time.strftime("%m-%d\n%H:%M")
+        draw_centered_multiline(x_pos, height - margin_bottom + 16, tick_label, tick_font)
 
-    draw.text((width / 2 - 110, 20), "PV Power Forecasting on Test Window", fill="black", font=font)
-    draw.text((width / 2 - 25, height - 50), "Timestamp", fill="black", font=font)
-    draw.text((20, margin_top - 30), "Power", fill="black", font=font)
+    for segment in segments:
+        segment_timestamps = pd.to_datetime(segment["timestamp"]).astype("int64").to_numpy(dtype=np.float64)
+        segment_values = segment["actual"].to_numpy(dtype=np.float32)
+        actual_points = [
+            (to_canvas_x(float(x_val)), to_canvas_y(float(value)))
+            for x_val, value in zip(segment_timestamps, segment_values)
+        ]
+        if len(actual_points) >= 2:
+            polygon = actual_points + [
+                (to_canvas_x(float(segment_timestamps[-1])), height - margin_bottom),
+                (to_canvas_x(float(segment_timestamps[0])), height - margin_bottom),
+            ]
+            draw.polygon(polygon, fill="#e8eef5")
 
-    legend_x = width - 260
-    legend_y = 40
-    for idx, (name, (color, _)) in enumerate(series.items()):
-        y = legend_y + idx * 24
+    for name, (color, values, width_px) in series.items():
+        for segment in segments:
+            segment_timestamps = pd.to_datetime(segment["timestamp"]).astype("int64").to_numpy(dtype=np.float64)
+            segment_values = segment[name].to_numpy(dtype=np.float32)
+            points = [
+                (to_canvas_x(float(x_val)), to_canvas_y(float(value)))
+                for x_val, value in zip(segment_timestamps, segment_values)
+            ]
+            draw.line(points, fill=color, width=width_px)
+            if name in {"actual", "lstm"}:
+                for point in points[:: max(len(points) // 8, 1)]:
+                    x_pos, y_pos = point
+                    draw.ellipse(
+                        [(x_pos - 3, y_pos - 3), (x_pos + 3, y_pos + 3)],
+                        fill=color,
+                        outline=color,
+                    )
+
+    title = "PV Power Forecasting on the Full Test Set"
+    subtitle = (
+        f"Test span: {timestamps.iloc[0].strftime('%Y-%m-%d %H:%M')} to "
+        f"{timestamps.iloc[-1].strftime('%Y-%m-%d %H:%M')}"
+    )
+    draw.text((margin_left, 42), title, fill="#183a5a", font=title_font)
+    draw.text((margin_left, 75), subtitle, fill="#5b6574", font=subtitle_font)
+    draw.text((width / 2 - 42, height - 54), "Timestamp", fill="#364152", font=axis_font)
+    draw.text((18, margin_top - 34), "Power", fill="#364152", font=axis_font)
+
+    legend_x = width - 315
+    legend_y = 54
+    for idx, (name, (color, _, width_px)) in enumerate(series.items()):
+        y = legend_y + idx * 26
         draw.line([(legend_x, y + 6), (legend_x + 28, y + 6)], fill=color, width=3)
-        draw.text((legend_x + 40, y), name.upper(), fill="black", font=font)
+        if name in {"actual", "lstm"}:
+            draw.ellipse(
+                [(legend_x + 12, y + 2), (legend_x + 18, y + 8)],
+                fill=color,
+                outline=color,
+            )
+        draw.text((legend_x + 40, y - 3), name.upper(), fill="#364152", font=legend_font)
+
+    rmse_values = {
+        name.upper(): math.sqrt(float(np.mean(np.square(plot_frame["actual"] - plot_frame[name]))))
+        for name in ("persistence", "mlp", "lstm")
+    }
+    stats_text = (
+        f"Persistence RMSE={rmse_values['PERSISTENCE']:.3f}   "
+        f"MLP RMSE={rmse_values['MLP']:.3f}   "
+        f"LSTM RMSE={rmse_values['LSTM']:.3f}"
+    )
+    draw.rounded_rectangle(
+        [(margin_left, 94), (margin_left + 470, 122)],
+        radius=10,
+        fill="#f6f8fb",
+        outline="#d9e0ea",
+        width=1,
+    )
+    draw.text((margin_left + 14, 100), stats_text, fill="#5b6574", font=stats_font)
 
     image.save(plot_path)
 
 
 def save_prediction_plot(plot_path: Path, predictions: pd.DataFrame) -> None:
-    plot_frame = predictions.iloc[: min(len(predictions), 192)].copy()
+    plot_frame = select_plot_frame(predictions)
     if save_plot_with_matplotlib(plot_path, plot_frame):
         return
     save_plot_with_pillow(plot_path, plot_frame)
@@ -629,9 +883,10 @@ def main() -> int:
     if args.add_time_features:
         frame, time_feature_cols = add_time_features(frame, args.time_col)
 
-    irradiance_col = find_irradiance_column(frame.columns)
-    signal_col = irradiance_col or args.target_col
-    frame = filter_night_segments(frame, signal_col)
+    if args.filter_night:
+        irradiance_col = find_irradiance_column(frame.columns)
+        signal_col = irradiance_col or args.target_col
+        frame = filter_night_segments(frame, signal_col)
 
     feature_cols = [args.target_col, *extra_features, *time_feature_cols]
     train_frame, val_frame, test_frame = split_frame(frame)
@@ -752,6 +1007,7 @@ def main() -> int:
         config_bits.append("time_features=on")
     else:
         config_bits.append("time_features=off")
+    config_bits.append(f"night_filter={'on' if args.filter_night else 'off'}")
     config_bits.append(f"input_features={len(feature_cols)}")
 
     metrics_path = output_dir / "metrics.csv"

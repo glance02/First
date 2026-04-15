@@ -59,10 +59,11 @@ python experiments/pv_forecast.py \
   --target-col power \
   --resample-rule 15min \
   --add-time-features \
-  --window-size 16 \
+  --window-size 20 \
   --horizon 2 \
-  --epochs 25 \
-  --hidden-size 64 \
+  --epochs 40 \
+  --batch-size 32 \
+  --hidden-size 128 \
   --output-dir artifacts/pv_experiment_light \
   --device cuda
 ```
@@ -72,11 +73,12 @@ python experiments/pv_forecast.py \
 这组参数的含义是：
 
 - 先把 1 分钟数据重采样为 15 分钟数据。
-- 使用过去 `16` 个时间步，也就是过去 `4` 小时的数据。
+- 使用过去 `20` 个时间步，也就是过去 `5` 小时的数据。
 - 预测未来 `2` 个时间步，也就是未来 `30` 分钟的功率。
 - 自动加入昼夜周期和周内周期的时间特征。
+- 使用更大的隐藏层和更小的 batch size，让 LSTM 有更充足的拟合能力。
 
-这样做的原因是：对原始 1 分钟单变量数据而言，`Persistence` 基线会非常强，深度学习模型不容易体现优势；而在 `15min` 重采样后的 `30` 分钟 ahead 设置下，图形会比 `1` 小时 ahead 更平滑，也更适合课程报告展示。
+这样做的原因是：对原始 1 分钟单变量数据而言，`Persistence` 基线会非常强，深度学习模型不容易体现优势；而在 `15min` 重采样后的 `30` 分钟 ahead 设置下，图形会比 `1` 小时 ahead 更平滑，也更适合课程报告展示。当前推荐参数是基于这份真实数据做过一轮简单调参后选出来的版本。
 
 ### 1. 无真实数据时的自测
 
@@ -94,11 +96,13 @@ python experiments/pv_forecast.py \
   --time-col timestamp \
   --target-col power \
   --feature-cols irradiance,temperature,humidity \
-  --window-size 8 \
-  --horizon 1 \
+  --resample-rule 15min \
+  --add-time-features \
+  --window-size 20 \
+  --horizon 2 \
   --epochs 40 \
-  --batch-size 64 \
-  --hidden-size 64 \
+  --batch-size 32 \
+  --hidden-size 128 \
   --device cuda
 ```
 
@@ -121,11 +125,14 @@ python experiments/pv_forecast.py --data-path data/your_pv.csv --epochs 40
 - `--hidden-size`：隐藏层宽度，默认 `64`。
 - `--resample-rule`：重采样规则，例如 `15min`、`30min`、`1h`。
 - `--add-time-features`：自动加入时间周期特征，如昼夜周期和周内周期。
+- `--filter-night`：可选开启夜间低功率区段过滤；默认关闭，也就是保留完整昼夜序列。
 - `--device`：`auto`、`cpu` 或 `cuda`。
 - `--output-dir`：输出目录，默认 `artifacts/pv_experiment`。
 - `--demo-synthetic`：启用内置 synthetic 数据。
 
-脚本会自动识别时间间隔的断点，不会跨越长缺失段或被过滤掉的夜间区段去拼接训练窗口。这一点对 LSTM 这类序列模型尤其重要。
+脚本会自动识别时间间隔的断点，不会跨越长缺失段去拼接训练窗口；如果你显式开启 `--filter-night`，它也不会跨越被过滤掉的夜间区段去拼接窗口。这一点对 LSTM 这类序列模型尤其重要。
+
+默认生成的 `prediction_curve.png` 会展示整段测试集的预测结果，并补充完整的时间轴标签，便于直接用于课程报告展示。
 
 ## 输出如何写回报告
 
