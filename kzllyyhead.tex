@@ -1,0 +1,154 @@
+% !TEX program = xelatex
+\documentclass[11pt,onecolumn,twoside,a4paper]{kzllyy}
+
+\usepackage[
+  a4paper,
+  top=2.6cm,
+  bottom=2.4cm,
+  left=2.0cm,
+  right=2.0cm,
+  columnsep=7mm,
+  headheight=14pt,
+  headsep=10pt
+]{geometry}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{fancyhdr}
+\usepackage{amsmath,amsfonts,amssymb,amsthm,bm,graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{multicol}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[sort]{cite}
+\usepackage{url}
+\usepackage{wasysym}
+
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Consolas}
+\setCJKmainfont{SimSun}
+\setCJKsansfont{SimHei}
+\setCJKmonofont{SimSun}
+
+\newCJKfontfamily\songti{SimSun}
+\newCJKfontfamily\heiti{SimHei}
+\newCJKfontfamily\fangsong{FangSong}
+\newCJKfontfamily\kaishu{KaiTi}
+\newfontfamily\tnr{Times New Roman}
+\newfontfamily\arial{Arial}
+
+\xeCJKsetup{PunctStyle=plain}
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 1pt
+
+\setlength{\parindent}{0.74cm}
+\setlength{\parskip}{0pt}
+\setlength{\columnsep}{7mm}
+\setlength{\abovedisplayskip}{6pt}
+\setlength{\belowdisplayskip}{6pt}
+\setlength{\abovedisplayshortskip}{6pt}
+\setlength{\belowdisplayshortskip}{6pt}
+\linespread{1.0}
+
+\newcommand{\cnTitleStyle}{\heiti\arial\fontsize{22pt}{28pt}\selectfont\bfseries}
+\newcommand{\cnAuthorStyle}{\fangsong\fontsize{14pt}{18pt}\selectfont}
+\newcommand{\cnAffilStyle}{\kaishu\fontsize{10.5pt}{14pt}\selectfont}
+\newcommand{\enTitleStyle}{\tnr\fontsize{12pt}{16pt}\selectfont\bfseries}
+\newcommand{\enAuthorStyle}{\tnr\fontsize{10.5pt}{14pt}\selectfont}
+\newcommand{\enAffilStyle}{\tnr\fontsize{9pt}{14pt}\selectfont}
+\newcommand{\enAbstractStyle}{\tnr\fontsize{9pt}{14pt}\selectfont}
+\newcommand{\zhAbstractStyle}{\songti\fontsize{9pt}{14pt}\selectfont}
+\newcommand{\maintextstyle}{\songti\tnr\fontsize{10.5pt}{14pt}\selectfont}
+\newcommand{\reftextstyle}{\songti\tnr\fontsize{9pt}{14pt}\selectfont}
+
+\AtBeginDocument{\maintextstyle}
+
+\renewcommand\thesubsubsection{\thesubsection.\arabic{subsubsection}}
+\setcounter{secnumdepth}{3}
+
+\titleformat{\section}
+  {\heiti\arial\fontsize{12pt}{18pt}\selectfont\bfseries}
+  {\thesection}{0.5em}{}
+\titlespacing*{\section}{0pt}{6pt}{6pt}
+
+\titleformat{\subsection}
+  {\heiti\arial\fontsize{10.5pt}{14pt}\selectfont\bfseries}
+  {\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{0pt}{0pt}
+
+\titleformat{\subsubsection}
+  {\songti\tnr\fontsize{10.5pt}{14pt}\selectfont}
+  {\thesubsubsection}{0.5em}{}
+\titlespacing*{\subsubsection}{0pt}{0pt}{0pt}
+
+\setlist[enumerate,1]{
+  label=\arabic*）,
+  leftmargin=1.8em,
+  itemsep=0pt,
+  topsep=0pt,
+  parsep=0pt,
+  partopsep=0pt
+}
+
+\newtheoremstyle{pcseeplain}
+  {3pt}
+  {3pt}
+  {\maintextstyle}
+  {0pt}
+  {\heiti\bfseries}
+  {}
+  {0.5em}
+  {}
+\theoremstyle{pcseeplain}
+\newtheorem{Def}{定义}
+\newtheorem{Thm}{定理}
+\newtheorem{Cor}{推论}
+\newtheorem{Rem}{注}
+\newtheorem{Exa}{例}
+\renewcommand{\proofname}{\heiti 证明}
+
+\renewcommand{\figurename}{图}
+\renewcommand{\tablename}{表}
+\DeclareCaptionFont{pcseeCaption}{\heiti\tnr\fontsize{9pt}{14pt}\selectfont\bfseries}
+\captionsetup{
+  font=pcseeCaption,
+  labelsep=space,
+  justification=centering
+}
+\captionsetup[figure]{skip=3pt}
+\captionsetup[table]{skip=3pt}
+
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\tnr\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+\pagestyle{plain}
+
+\makeatletter
+\renewcommand\refname{\heiti\fontsize{12pt}{18pt}\selectfont 参考文献}
+\renewenvironment{thebibliography}[1]
+  {\section*{\refname}%
+   \reftextstyle
+   \list{\@biblabel{\@arabic\c@enumiv}}%
+        {\settowidth\labelwidth{\@biblabel{#1}}%
+         \setlength{\labelsep}{0.5em}%
+         \setlength{\leftmargin}{0.63cm}%
+         \addtolength{\leftmargin}{\labelwidth}%
+         \addtolength{\leftmargin}{\labelsep}%
+         \setlength{\itemindent}{0pt}%
+         \setlength{\listparindent}{0pt}%
+         \setlength{\parsep}{0pt}%
+         \setlength{\itemsep}{0pt}%
+         \usecounter{enumiv}%
+         \let\p@enumiv\@empty
+         \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+   \sloppy
+   \clubpenalty4000
+   \widowpenalty4000
+   \sfcode`\.=\@m}
+  {\endlist}
+\makeatother
