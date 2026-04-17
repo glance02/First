@@ -34,4 +34,3 @@
 - 提交前至少运行一次 synthetic 模式，确认脚本可执行。
 - 修改数据流程或参数后，建议输出到新的 `artifacts/<run_name>/` 目录，避免覆盖已有结果。
 - 最少检查 `metrics.csv`、`predictions.csv`、`prediction_curve.png` 是否成功生成。
-

@@ -8,7 +8,25 @@
 \subsection{常见模型与评价指标}
 目前智慧能源研究中最常见的深度学习模型包括 LSTM、GRU、CNN、TCN、Transformer 及其混合结构。LSTM 和 GRU 对长期依赖关系建模能力较强，因此在负荷与新能源预测中应用最广。CNN 可以提取局部模式，常与 LSTM 结合形成 CNN-LSTM，用于同时学习局部变化与时间依赖。TCN 通过膨胀卷积增强了长序列建模能力，在高频多步预测中表现突出。近年来，Transformer 和注意力机制也逐步进入新能源预测领域，用于处理更长时间跨度和更复杂的多变量关系。
 
-预测模型通常采用 MAE、RMSE、MAPE 等指标进行评价。MAE 便于理解平均偏差大小，RMSE 对大误差更敏感，更适合衡量极端天气或波动时段下的稳定性，MAPE 则便于跨场景比较，但在真实值接近零时容易失真，因此在夜间光伏出力场景下需要谨慎解释。对智慧能源而言，模型价值不能只看平均误差，还应结合鲁棒性和下游调度收益综合判断。
+预测模型通常采用 MAE、RMSE、MAPE 等指标进行评价。这三个指标的计算方式如下：
+
+\[
+\mathrm{MAE}=\frac{1}{n}\sum_{i=1}^{n}\left|y_i-\hat{y}_i\right|
+\]
+
+\[
+\mathrm{RMSE}=\sqrt{\frac{1}{n}\sum_{i=1}^{n}\left(y_i-\hat{y}_i\right)^2}
+\]
+
+\[
+\mathrm{MAPE}=\frac{100\%}{n}\sum_{i=1}^{n}\left|\frac{y_i-\hat{y}_i}{y_i}\right|
+\]
+
+其中，$y_i$ 表示真实值，$\hat{y}_i$ 表示预测值，$n$ 表示样本数。
+
+MAE 便于理解平均偏差大小，RMSE 对大误差更敏感，更适合衡量极端天气或波动时段下的稳定性，MAPE 则便于跨场景比较，但在真实值接近零时容易失真，因此在夜间光伏出力场景下需要谨慎解释。对智慧能源而言，模型价值不能只看平均误差，还应结合鲁棒性和下游调度收益综合判断。
+
+\newpage
 
 \begin{center}
 \captionof{table}{智慧能源典型任务、输入数据与常用模型\\Table 1 Typical tasks, inputs, and models in smart energy}
