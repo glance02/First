@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (TeX Live 2025) (preloaded format=xelatex 2025.11.2)  18 APR 2026 17:45
+This is XeTeX, Version 3.141592653-2.6-0.999997 (TeX Live 2025) (preloaded format=xelatex 2025.11.2)  18 APR 2026 17:59
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -780,7 +780,7 @@ Package fontspec Info:
 \c@Rem=\count362
 \c@Exa=\count363
 )
-(./kzllyy template20181214.aux)
+No file "kzllyy template20181214".aux.
 \openout1 = `"kzllyy template20181214.aux"'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 4.
@@ -803,7 +803,6 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
-
 *geometry* driver: auto-detecting
 *geometry* detected driver: xetex
 *geometry* verbose mode - [ preamble ] result:
@@ -907,9 +906,11 @@ Package caption Info: float package is loaded.
 Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
 Package hyperref Info: Link coloring OFF on input line 4.
-(./kzllyy template20181214.out) (./kzllyy template20181214.out)
 \@outlinefile=\write3
 \openout3 = `"kzllyy template20181214.out"'.
+
+
+Package hyperref Warning: Rerun to get /PageLabels entry.
 
 
 Package fontspec Info: 
@@ -936,7 +937,6 @@ Package fontspec Info:
 (fontspec)              
 (fontspec)             - 'normal' (m/n) with NFSS spec.:
 (fontspec)             <->"SimHei/OT:script=hani;language=dflt;"
-
 
 
 LaTeX Font Warning: Font shape `TU/SimHei(0)/b/n' undefined
@@ -1145,12 +1145,37 @@ Underfull \hbox (badness 10000) in paragraph at lines 43--43
  []
 
 ) (./chapter/03_cases.tex
+
+LaTeX Warning: Citation `mellit2020' on page 3 undefined on input line 3.
+
+
+LaTeX Warning: Citation `khouili2025' on page 3 undefined on input line 5.
+
+
+LaTeX Warning: Citation `mellit2021' on page 3 undefined on input line 7.
+
+
 Underfull \hbox (badness 10000) in paragraph at lines 7--8
 \TU/TimesNewRoman(1)/m/n/10.5 BiLSTM\TU/SimSun(0)/m/n/10.5 、| \TU/TimesNewRoman
 (1)/m/n/10.5 GRU\TU/SimSun(0)/m/n/10.5 、| \TU/TimesNewRoman(1)/m/n/10.5 BiGRU\T
 U/SimSun(0)/m/n/10.5 、| \TU/TimesNewRoman(1)/m/n/10.5 CNN1D\TU/SimSun(0)/m/n/10
 .5 、| \TU/TimesNewRoman(1)/m/n/10.5 CNN-LSTM
  []
+
+
+LaTeX Warning: Citation `luo2021' on page 3 undefined on input line 11.
+
+
+LaTeX Warning: Citation `sarmas2023' on page 3 undefined on input line 15.
+
+
+LaTeX Warning: Citation `liu2024' on page 3 undefined on input line 19.
+
+
+LaTeX Warning: Citation `meka2021' on page 3 undefined on input line 21.
+
+
+LaTeX Warning: Citation `alabdullah2022' on page 3 undefined on input line 23.
 
 [3]
 LaTeX Font Info:    Calculating math sizes for size <8.2> on input line 36.
@@ -1184,9 +1209,21 @@ LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <4.09999> not available
 (Font)              size <5> substituted on input line 36.
 
 ) (./chapter/04_experiment.tex
+
+LaTeX Warning: Reference `fig:experiment-code' on page 4 undefined on input lin
+e 4.
+
 File: Img/experiment.png Graphic file (type bmp)
 <Img/experiment.png>
- [4]
+[4]
+
+LaTeX Warning: Reference `tab:experiment-results' on page 5 undefined on input 
+line 21.
+
+
+LaTeX Warning: Reference `tab:experiment-results' on page 5 undefined on input 
+line 21.
+
 
 Package caption Warning: The option `hypcap=true' will be ignored for this
 (caption)                particular \caption on input line 24.
@@ -1217,17 +1254,23 @@ LaTeX Font Warning: Size substitutions with differences
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package rerunfilecheck Info: File `"kzllyy template20181214".out' has not chang
 ed.
 (rerunfilecheck)             Checksum: <no file>.
  ) 
 Here is how much of TeX's memory you used:
- 17718 strings out of 468219
- 365628 string characters out of 5431931
- 840181 words of memory out of 5000000
- 46035 multiletter control sequences out of 15000+600000
- 647536 words of font info for 204 fonts, out of 8000000 for 9000
+ 17709 strings out of 468219
+ 365451 string characters out of 5431931
+ 839396 words of memory out of 5000000
+ 46031 multiletter control sequences out of 15000+600000
+ 647544 words of font info for 205 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 78i,12n,96p,1386b,695s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 78i,12n,96p,1386b,694s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on kzllyy template20181214.pdf (6 pages).
