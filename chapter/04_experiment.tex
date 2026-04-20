@@ -10,12 +10,53 @@
     \label{fig:experiment-code}
 \end{figure}
 
-该实验采用 Zenodo 平台公开数据集“LIGHT dataset sample for solar smart home pilot - 201801”中的一个真实光伏站点样本，选取 \texttt{ID00002} 作为研究对象。原始数据为 1 分钟粒度的功率序列，相邻时刻之间连续性很强，因此实验将其重采样为 45 分钟粒度，以更清晰地呈现光伏功率在昼夜转换、白天爬升、峰值波动和回落过程中的变化特征，并保留单站点功率序列作为核心输入。配套实验脚本位于 \texttt{experiments}中，\texttt{experiments/main.py}用于完成训练、评估并保存模型权重和实验配置，\texttt{experiments/vis.py} 基于这些结果生成预测曲线图和简短报告摘要。更具体的解释可以查看该仓库的 README 文件以及具体代码。
+该实验采用 Zenodo 平台公开数据集“LIGHT dataset sample for solar smart home pilot - 201801”中的一个真实光伏站点样本，选取 \texttt{ID00002} 作为研究对象。原始数据为 1 分钟粒度的功率序列，相邻时刻之间连续性很强，因此实验将其重采样为 45 分钟粒度，以更清晰地呈现光伏功率在昼夜转换、白天爬升、峰值波动和回落过程中的变化特征，并保留单站点功率序列作为核心输入。配套实验脚本位于 \texttt{experiments/}中，\texttt{experiments/main.py}用于完成训练、评估并保存模型权重和实验配置，\texttt{experiments/vis.py} 基于这些结果生成预测曲线图和简短报告摘要。更具体的解释可以查看该仓库的 README 文件以及具体代码。
 
 \subsection{实验方案}
 实验设置三类模型。第一类是 Persistence 基线，即“未来时刻功率约等于当前时刻功率”，这是时序预测中非常常见且很有参考价值的强基线。第二类是 MLP 模型，它把历史窗口展开后输入前馈神经网络，用来表示“没有显式时序记忆结构的神经网络”能达到什么水平。第三类是单层 LSTM 模型，用来体现深度学习对序列依赖关系的建模优势。LSTM也是老师在课程中介绍过、我在课堂展示中也进一步讲解过的经典时序模型。
 
 本实验采用以下配置。首先，将原始 1 分钟数据重采样为 45 分钟数据；其次，加入基于时间戳构造的周期性时间特征，包括昼夜周期和周内周期；再次，使用过去 12 个时间步，也就是过去 9 小时的数据，预测未来 2 个时间步，也就是未来 90 分钟的光伏功率。数据经过时间排序后，保留完整的昼夜功率变化，不使用夜间过滤，并按 70\%/15\%/15\% 切分为训练集、验证集和测试集。训练阶段采用验证集 RMSE 做早停，并对重采样粒度、预测步长、窗口长度、隐藏层宽度和 batch size 做了简单调参，最终选择 \texttt{hidden\_size=128}、\texttt{batch\_size=32} 这一组参数。这样的设置既保留了全天连续功率曲线，也使数据同时呈现夜间低值、白天爬升、峰值波动和回落等不同阶段的特征，从而更贴近真实光伏功率序列在较长时间尺度下的时序结构。
+
+\subsection{实验模型介绍}
+
+我在这个实验中主要对比了三类模型：Persistence、MLP 和 LSTM。一下简要介绍一下每一个模型。
+
+\textbf{1. Persistence}：这是一个非常简单的基线模型，直接将当前时刻的功率值作为未来时刻的预测值。虽然它没有任何学习能力，但在某些短时预测场景下，尤其是当功率变化较为平稳时，Persistence 模型可能会表现得相当不错，因此是一个重要的参考点。
+
+\[
+\hat{y}_{t+h}=y_t,\quad h=1,2,\dots,H
+\]
+
+其中，$y_t$ 表示当前时刻的真实功率值，$\hat{y}_{t+h}$ 表示对未来第 $h$ 个时间步的预测值，$H$ 表示预测步数。在本文实验设置中，$H=2$。
+
+
+
+\textbf{2. MLP}：多层感知机（Multilayer Perceptron）是一种前馈神经网络，它将历史窗口内的功率值和时间特征展开成一个固定长度的输入向量，经过若干全连接层后输出未来时刻的功率预测。MLP 没有显式的时序建模能力，因此它的表现可以反映出在没有考虑时间依赖关系的情况下，单纯基于历史数据进行预测的效果。
+
+MLP 的前向传播过程可以表示为：
+
+\[
+\begin{aligned}
+\mathbf{h}^{(l)} &= f^{(l)}\left(\mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}\right)
+\end{aligned}
+\]
+
+\[
+\hat{y}=\mathbf{W}^{(L+1)}\mathbf{h}^{(L)}+\mathbf{b}^{(L+1)}
+\]
+
+其中，$\mathbf{x}$ 表示输入特征向量，$\mathbf{h}^{(l)}$ 表示第 $l$ 层的隐藏表示，$\mathbf{h}^{(0)}=\mathbf{x}$ 表示网络以输入向量作为初始输入，$\mathbf{W}^{(l)}$ 和 $\mathbf{b}^{(l)}$ 分别表示第 $l$ 层的权重矩阵和偏置向量，$f^{(l)}(\cdot)$ 表示激活函数，$l=1,2,\dots,L$ 表示隐藏层编号，$L$ 表示隐藏层总数，$\hat{y}$ 表示模型输出。
+
+\textbf{3. LSTM}：长短期记忆网络（Long Short-Term Memory）是一种特殊的循环神经网络，设计用来捕捉序列数据中的长期依赖关系。如图~\ref{fig:lstm}，LSTM 通过引入门控机制，能够有效地保留和利用历史信息，从而更好地建模光伏功率序列中存在的时间依赖性和非线性变化。这使得 LSTM 在时序预测任务中通常能够显著优于简单的基线模型和没有时序结构的神经网络。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\columnwidth]{Img/lstm.pdf}
+    \captionof{figure}{LSTM原理解析\\Fig. 3 LSTM principle illustration}
+    \label{fig:lstm}
+\end{figure}
+
+其实目前在智慧能源领域，除了 LSTM 以外，还有很多其他类型的深度学习模型也被广泛应用，例如 GRU、CNN-LSTM、TCN 和 Transformer 等，尤其是Transformer 。但是在这个实验中，我选择了 LSTM 作为代表性的深度学习模型，主要是因为它在时序预测领域的经典地位和广泛应用，同时也为了保持实验的简洁性和可复现性。未来如果有机会，我也计划在这个基础上进一步引入其他类型的模型进行对比分析，以更全面地展示深度学习在光伏功率预测中的潜力和适用性。
 
 \subsection{实验结果}
 基于上述真实数据和配置，我最终保留的最佳实验结果表~\ref{tab:experiment-results}。从表~\ref{tab:experiment-results} 可以看出，在“45 分钟重采样 + 时间特征 + 90 分钟 ahead 预测 + 保留完整昼夜序列”的设置下，LSTM 在 MAE、RMSE 和 MAPE 三项指标上都表现最好。其中，LSTM 的 RMSE 为 0.3630，较 Persistence 下降约 13.28\%，较 MLP 下降约 17.95\%。这说明即便不使用夜间过滤，只要适当拉长时间粒度和预测步长，LSTM 对较长时序依赖和非线性变化的建模优势依然能够体现出来。
@@ -37,11 +78,11 @@ MLP & 0.2538 & 0.4424 & 64.61 \\
 \label{tab:experiment-results}
 \end{center}
 
-需要说明的是，Persistence 的 MAPE 数值依然偏大，主要是因为光伏功率在夜间、日出和日落等低功率时段接近零，百分比误差容易被放大。因此，在解释结果时应更关注 RMSE 和 MAE 这类对工程应用更稳定的指标。综合来看，本实验支持这样一个判断：在完整昼夜预测设定下，深度学习模型能否优于强基线，并不只取决于是否保留夜间样本，还与重采样粒度、预测步长和历史窗口长度等实验口径密切相关。当前这组 45 分钟重采样、90 分钟 ahead 的设置下，LSTM 在保持完整时间轴的前提下取得最优结果。
+需要说明的是，Persistence 的 MAPE 数值依然偏大，主要是因为光伏功率在夜间、日出和日落等低功率时段接近零，百分比误差容易被放大。因此，在解释结果时应更关注 RMSE 和 MAE 这类对工程应用更稳定的指标。综合来看，该实验支持这样一个判断：在完整昼夜预测设定下，深度学习模型能否优于强基线，并不只取决于是否保留夜间样本，还与重采样粒度、预测步长和历史窗口长度等实验口径密切相关。当前这组 45 分钟重采样、90 分钟 ahead 的设置下，LSTM 在保持完整时间轴的前提下取得最优结果。
 
 \begin{center}
-\includegraphics[width=\columnwidth]{img/fig2_prediction_curve.png}
-\captionof{figure}{测试集整段时间上的真实值与各模型预测曲线\\Fig. 3 Actual and predicted curves on the test set}
+\includegraphics[width=\columnwidth]{Img/fig2_prediction_curve.png}
+\captionof{figure}{测试集整段时间上的真实值与各模型预测曲线\\Fig. 4 Actual and predicted curves on the test set}
 \label{fig:prediction-curve}
 \end{center}
 
