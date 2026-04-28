@@ -29,6 +29,8 @@
 \usepackage{wasysym}
 \usepackage[hidelinks]{hyperref}
 \usepackage{float}
+\usepackage{xcolor}
+\usepackage{listings}
 
 \setmainfont{Times New Roman}
 \setsansfont{Arial}
@@ -69,6 +71,31 @@
 \newcommand{\reftextstyle}{\songti\tnr\fontsize{9pt}{14pt}\selectfont}
 
 \AtBeginDocument{\maintextstyle}
+
+\lstdefinestyle{pythonAppendix}{
+  language=Python,
+  basicstyle=\ttfamily\fontsize{7.5pt}{9pt}\selectfont,
+  keywordstyle=\color{blue!60!black},
+  commentstyle=\color{green!40!black},
+  stringstyle=\color{red!55!black},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  stepnumber=1,
+  numbersep=8pt,
+  frame=single,
+  rulecolor=\color{black!35},
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+  xleftmargin=2em,
+  xrightmargin=0.5em,
+  aboveskip=6pt,
+  belowskip=6pt
+}
 
 \renewcommand\thesubsubsection{\thesubsection.\arabic{subsubsection}}
 \setcounter{secnumdepth}{3}

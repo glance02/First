@@ -1,8 +1,50 @@
-\section{课程小结}
+\appendix
 
-\subsection{课程最大收获}
+\section{实验核心代码}
 
+本附录列出光伏功率预测实验中的核心代码片段，主要包括模型定义、数据预处理、时间特征构造、滑动窗口样本生成、训练评估流程和结果保存逻辑。完整实验代码见 GitHub 仓库：\url{https://github.com/glance02/SmartEnergyPVForecasting}。
 
-\subsection{课堂做的最好的三个方面}
+\subsection{模型定义}
 
-\subsection{需要改进的的方面}
+\lstinputlisting[
+  style=pythonAppendix,
+  firstline=74,
+  lastline=104,
+  caption={MLP 与 LSTM 模型定义}
+]{experiments/main.py}
+
+\subsection{数据预处理与时间特征}
+
+\lstinputlisting[
+  style=pythonAppendix,
+  firstline=206,
+  lastline=268,
+  caption={数据清洗、重采样与周期性时间特征构造}
+]{experiments/main.py}
+
+\subsection{滑动窗口样本构造}
+
+\lstinputlisting[
+  style=pythonAppendix,
+  firstline=310,
+  lastline=365,
+  caption={基于历史窗口和预测步长构造监督学习样本}
+]{experiments/main.py}
+
+\subsection{指标计算与模型训练}
+
+\lstinputlisting[
+  style=pythonAppendix,
+  firstline=385,
+  lastline=469,
+  caption={误差指标、预测函数与早停训练过程}
+]{experiments/main.py}
+
+% \subsection{主实验流程}
+
+% \lstinputlisting[
+%   style=pythonAppendix,
+%   firstline=536,
+%   lastline=679,
+%   caption={训练、测试集预测、指标汇总与结果保存}
+% ]{experiments/main.py}
