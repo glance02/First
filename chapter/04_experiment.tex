@@ -12,6 +12,28 @@
 
 该实验采用 Zenodo 平台公开数据集“LIGHT dataset sample for solar smart home pilot - 201801”中的一个真实光伏站点样本，选取 \texttt{ID00002} 作为研究对象。原始数据为 1 分钟粒度的功率序列，相邻时刻之间连续性很强，因此实验将其重采样为 45 分钟粒度，以更清晰地呈现光伏功率在昼夜转换、白天爬升、峰值波动和回落过程中的变化特征，并保留单站点功率序列作为核心输入。配套实验脚本位于 \texttt{experiments/}中，\texttt{experiments/main.py}用于完成训练、评估并保存模型权重和实验配置，\texttt{experiments/vis.py} 基于这些结果生成预测曲线图和简短报告摘要。核心实现见附录 A，完整代码与 README 文件可在 GitHub 仓库中查看。
 
+\end{multicols}
+
+\begin{center}
+\includegraphics[width=0.96\textwidth]{Img/fig3_experiment_pipeline.png}
+\captionof{figure}{光伏功率预测实验流程\\Fig. 3 Workflow of the photovoltaic power forecasting experiment}
+\label{fig:experiment-pipeline}
+\end{center}
+
+\begin{multicols}{2}
+\maintextstyle
+
+图~\ref{fig:experiment-pipeline} 展示了本文光伏功率预测实验的整体流程。实验首先从 LIGHT 数据集中选取 \texttt{ID00002} 站点的 1 分钟功率序列，然后依次进行 45 分钟重采样、时间周期特征构造和滑动窗口样本生成。在建模阶段，本文将 Persistence、MLP 和 LSTM 放在同一数据划分与评价口径下比较，最后通过 MAE、RMSE 和 MAPE 形成误差指标表，并结合预测曲线观察不同模型对光伏功率变化趋势的刻画能力。该流程说明本文实验不是单纯展示某个模型结果，而是围绕统一的数据处理、模型对比和结果评价链路展开。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\columnwidth]{Img/fig4_resample_comparison.png}
+    \captionof{figure}{原始 1 分钟数据与 45 分钟重采样数据对比\\Fig. 4 Comparison between 1-minute raw data and 45-minute resampled data}
+    \label{fig:resample-comparison}
+\end{figure}
+
+由图~\ref{fig:resample-comparison} 可以看出，45 分钟重采样保留了光伏功率日内爬升、峰值和回落的主要趋势，同时削弱了 1 分钟数据中的局部高频波动，使后续模型比较更聚焦于较长时间尺度下的时序依赖关系。
+
 \subsection{实验方案}
 实验设置三类模型。第一类是 Persistence 基线，即“未来时刻功率约等于当前时刻功率”，这是时序预测中非常常见且很有参考价值的强基线。第二类是 MLP 模型，它把历史窗口展开后输入前馈神经网络，用来表示“没有显式时序记忆结构的神经网络”能达到什么水平。第三类是单层 LSTM 模型，用来体现深度学习对序列依赖关系的建模优势。LSTM 也是老师在课程中介绍过、我在课堂展示中也进一步讲解过的经典时序模型。
 
@@ -49,10 +71,31 @@ MLP 的前向传播过程可以表示为：
 
 \textbf{3. LSTM}：长短期记忆网络（Long Short-Term Memory）是一种特殊的循环神经网络，设计用来捕捉序列数据中的长期依赖关系。如图~\ref{fig:lstm}，LSTM 通过引入门控机制，能够有效地保留和利用历史信息，从而更好地建模光伏功率序列中存在的时间依赖性和非线性变化。这使得 LSTM 在时序预测任务中通常能够显著优于简单的基线模型和没有时序结构的神经网络。
 
+LSTM 的核心在于通过输入门、遗忘门和输出门控制信息的写入、保留与输出，其基本计算过程可以表示为：
+
+\[
+\begin{aligned}
+\mathbf{i}_t &= \sigma(\mathbf{W}_{xi}\mathbf{x}_t+\mathbf{W}_{hi}\mathbf{h}_{t-1}+\mathbf{b}_i),\\
+\mathbf{f}_t &= \sigma(\mathbf{W}_{xf}\mathbf{x}_t+\mathbf{W}_{hf}\mathbf{h}_{t-1}+\mathbf{b}_f),\\
+\tilde{\mathbf{c}}_t &= \tanh(\mathbf{W}_{xc}\mathbf{x}_t+\mathbf{W}_{hc}\mathbf{h}_{t-1}+\mathbf{b}_c),\\
+\mathbf{o}_t &= \sigma(\mathbf{W}_{xo}\mathbf{x}_t+\mathbf{W}_{ho}\mathbf{h}_{t-1}+\mathbf{b}_o)
+\end{aligned}
+\]
+
+\[
+\begin{aligned}
+\mathbf{c}_t &= \mathbf{f}_t \odot \mathbf{c}_{t-1}+\mathbf{i}_t \odot \tilde{\mathbf{c}}_t,\\
+\mathbf{h}_t &= \mathbf{o}_t \odot \tanh(\mathbf{c}_t),\\
+\hat{y}_{t+H} &= \mathbf{W}_y\mathbf{h}_t+b_y
+\end{aligned}
+\]
+
+其中，$\mathbf{i}_t$、$\mathbf{f}_t$ 和 $\mathbf{o}_t$ 分别表示输入门、遗忘门和输出门，$\tilde{\mathbf{c}}_t$ 表示候选记忆状态，$\mathbf{c}_t$ 和 $\mathbf{h}_t$ 分别表示当前时刻的单元状态和隐藏状态，$\odot$ 表示逐元素乘法。在本文实验中，模型利用历史窗口最后一个时刻的隐藏状态输出未来第 $H$ 个时间步的功率预测值。
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\columnwidth]{Img/lstm.pdf}
-    \captionof{figure}{LSTM原理解析\\Fig. 3 LSTM principle illustration}
+    \captionof{figure}{LSTM原理解析\\Fig. 5 LSTM principle illustration}
     \label{fig:lstm}
 \end{figure}
 
@@ -82,7 +125,7 @@ MLP & 0.2538 & 0.4424 & 64.61 \\
 
 \begin{center}
 \includegraphics[width=\columnwidth]{Img/fig2_prediction_curve.png}
-\captionof{figure}{测试集整段时间上的真实值与各模型预测曲线\\Fig. 4 Actual and predicted curves on the test set}
+\captionof{figure}{测试集整段时间上的真实值与各模型预测曲线\\Fig. 6 Actual and predicted curves on the test set}
 \label{fig:prediction-curve}
 \end{center}
 
