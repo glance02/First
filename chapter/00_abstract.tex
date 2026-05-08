@@ -8,7 +8,7 @@
 \vspace{6pt}
 
 {\zhAbstractStyle
-\noindent{\heiti 摘要：} 随着风电、光伏等新能源装机持续增长，电力系统运行的不确定性显著增强，出力预测已成为智慧能源中的基础能力。本文围绕深度学习在智慧能源中的应用展开分析，重点讨论光伏功率预测，并结合风电预测与微电网能量管理，概述其代表性模型、工程价值及面临的数据质量、跨场景泛化、可解释性和部署成本等问题。基于公开 LIGHT 光伏数据集，本文进一步比较了 Persistence、MLP 和 LSTM 在 90 分钟 ahead 预测任务中的表现：将 1 分钟功率数据重采样为 45 分钟数据，并加入时间周期特征。实验结果表明，LSTM 在 MAE、RMSE 和 MAPE 三项指标上均优于 Persistence 和 MLP，其中 RMSE 为 0.3630，较 Persistence 下降约 13.28\%，说明在更长预测步长和更粗时间粒度下，LSTM 对光伏功率时序依赖的建模能力更强。实验代码开源在 GitHub 仓库：\url{https://github.com/glance02/SmartEnergyPVForecasting}。\par}
+\noindent{\heiti 摘要：} 随着风电、光伏等新能源装机持续增长，电力系统运行的不确定性显著增强，出力预测已成为智慧能源中的基础能力。本文围绕深度学习在智慧能源中的应用展开分析，重点讨论光伏功率预测，并结合风电预测与微电网能量管理，概述其代表性模型、工程价值及面临的数据质量、跨场景泛化、可解释性和部署成本等问题。基于公开 LIGHT 光伏数据集，本文进一步比较了 Persistence、MLP 和 LSTM 在提前 90 分钟预测任务中的表现：将 1 分钟功率数据重采样为 45 分钟数据，并加入时间周期特征。实验结果表明，LSTM 在 MAE、RMSE 和 MAPE 三项指标上均优于 Persistence 和 MLP，其中 RMSE 为 0.3630，较 Persistence 下降约 13.28\%，说明在更长预测步长和更粗时间粒度下，LSTM 对光伏功率时序依赖的建模能力更强。实验代码开源在 GitHub 仓库：\url{https://github.com/glance02/SmartEnergyPVForecasting}。\par}
 \vspace{6pt}
 
 {\zhAbstractStyle

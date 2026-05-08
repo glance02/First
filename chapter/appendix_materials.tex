@@ -1,4 +1,9 @@
 \appendix
+\titleformat{\section}
+  {\heiti\arial\fontsize{12pt}{18pt}\selectfont\bfseries}
+  {附录~\thesection}{0.5em}{}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
 
 \section{实验核心代码}
 
