@@ -23,20 +23,50 @@ artifacts/*
 *.ckpt
 
 # LaTeX build intermediates
+*.acn
+*.acr
+*.alg
+*.auxlock
 *.aux
 *.bbl
 *.bcf
 *.blg
+*.dvi
 *.fdb_latexmk
 *.fls
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.idx
+*.ilg
+*.ind
+*.ist
+*.loa
+*.loe
 *.lof
 *.log
+*.lol
 *.lot
+*.maf
+*.mtc
+*.mtc[0-9]*
+*.nav
 *.out
+*.ptc
+*.pyg
 *.run.xml
+*.snm
+*.synctex
 *.synctex.gz
+*.synctex.gz(busy)
+*.synctex(busy)
+*.tdo
+*.thm
 *.toc
+*.vrb
 *.xdv
+_minted-*/
 
 # Editor and OS files
 .vscode/

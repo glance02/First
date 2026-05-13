@@ -1,36 +1,51 @@
 # Repository Guidelines
 
-## 项目结构与模块组织
-当前分支的核心目录如下：
+## 项目结构与职责
+当前分支是一个计算机学院课程报告的 LaTeX 模板/正文项目。
 
-- `experiments/`：可运行的 Python 实验脚本，当前主要是 `pv_forecast.py`。
-- `data/raw/`：原始下载数据。
-- `data/processed/`：清洗后的实验输入数据。
-- `artifacts/`：实验输出结果，如 `metrics.csv`、`predictions.csv`、模型权重和图表。
-- 根目录文档：`README.md`、`smart_energy_report.md` 等说明和报告文件。
+- `main.tex`：文档入口，只负责设置课程名、引入摘要/正文/参考文献等章节文件，不在这里堆正文内容。
+- `csreport.cls`：课程报告类文件，封装页面、字体、页眉、目录、标题、摘要、图表公式编号和参考文献格式。
+- `chapter/`：正文内容目录。摘要、绪论、正文主体、结论、参考文献等都放在这里，并由 `main.tex` 用 `\input{chapter/...}` 引入。
+- `Img/`：报告图片资源目录，正文中用相对路径引用。
+- `template.md`：课程报告撰写规范的文本参考。
+- `latex.ps1`：本项目的 XeLaTeX 编译脚本。
 
-`artifacts/` 下的内容应视为生成物，尽量通过脚本重新生成，不要直接手工修改。
+封面、扉页、教师评语页不由当前 `main.tex` 和 `csreport.cls` 生成，除非用户明确要求，不要主动加入这些页面。
 
-## 构建、测试与开发命令
-仓库当前没有独立的构建系统，主要直接运行 Python 脚本：
+## 编译与验证
+在仓库根目录执行：
 
-- `python experiments/pv_forecast.py --demo-synthetic --epochs 10`：使用合成数据做快速自测。
-- `python experiments/pv_forecast.py --data-path data/processed/light_pv_id00002_201801.csv --resample-rule 15min --add-time-features --window-size 20 --horizon 2 --epochs 40 --batch-size 32 --hidden-size 128 --output-dir artifacts/pv_experiment_light --device cpu`：推荐的真实数据实验命令。
-- `mamba install python pandas numpy pytorch pillow matplotlib -c pytorch -c conda-forge`：按 `experiments/README.md` 安装最小依赖。
+```powershell
+.\latex.ps1
+```
 
-请在仓库根目录执行命令，避免相对路径失效。
+脚本会连续运行两次：
 
-## 代码风格与命名规范
-保持与 `experiments/pv_forecast.py` 一致的风格：
+```powershell
+xelatex -interaction=nonstopmode -synctex=1 main.tex
+xelatex -interaction=nonstopmode -synctex=1 main.tex
+```
 
-- Python 使用 4 空格缩进，遵循 PEP 8。
-- 函数、变量、命令行参数、文件名使用 `snake_case`。
-- 类名使用 `PascalCase`，例如 `Standardizer`、`LSTMRegressor`。
-- 优先拆分为清晰的小函数，避免把预处理、训练、评估逻辑堆在同一段代码里。
+连续编译两次是为了刷新目录、页码和交叉引用。修改 `main.tex`、`csreport.cls` 或 `chapter/*.tex` 后，至少运行一次 `.\latex.ps1` 验证是否能生成 `main.pdf`。
 
-## 测试规范
-当前仓库没有单独的 `tests/` 目录，测试以可复现实验运行为主：
+## LaTeX 写作规则
+- 正文内容优先写入 `chapter/*.tex`，不要把大段正文直接写进 `main.tex`。
+- 新增章节时，先在 `chapter/` 下创建语义清晰的文件名，再在 `main.tex` 中添加对应 `\input{chapter/文件名}`。
+- 中文正文使用规范中文标点；英文摘要和英文关键词保持英文标点。
+- 图片放入 `Img/`，正文中使用 `\includegraphics` 引用相对路径。
+- 参考文献当前使用 `chapter/references.tex` 中的 `thebibliography`，不要在各章节末尾分散放参考文献。
+- 标题层级使用 `\section`、`\subsection`、`\subsubsection`，不要手写编号。
+- 图、表、公式编号由 `csreport.cls` 自动处理，正文中不要手写“图2.1”“表2.1”等编号。
 
-- 提交前至少运行一次 synthetic 模式，确认脚本可执行。
-- 修改数据流程或参数后，建议输出到新的 `artifacts/<run_name>/` 目录，避免覆盖已有结果。
-- 最少检查 `metrics.csv`、`predictions.csv`、`prediction_curve.png` 是否成功生成。
+## 模板维护规则
+- 修改版式、字体、页眉、目录、标题、摘要环境等全局格式时，优先改 `csreport.cls`。
+- 修改具体报告内容时，只改 `chapter/*.tex`。
+- `\coursename{...}` 在 `main.tex` 中设置，用于页眉显示 `《课程名》课程报告`。
+- 保持模板面向 XeLaTeX，不要改成 pdfLaTeX 编译。
+- 不要引入复杂构建系统；当前项目保持 `latex.ps1` 作为唯一编译入口。
+
+## 生成物与 Git
+- `.aux`、`.log`、`.toc`、`.synctex.gz` 等 LaTeX 中间文件是生成物，不要手工编辑。
+- `main.pdf` 是编译产物；是否提交按用户要求处理。
+- 工作区可能包含用户未提交的改动。修改前先查看相关文件，避免覆盖用户内容。
+- 不要执行 `git reset --hard`、强制清理或删除用户文件，除非用户明确要求。
