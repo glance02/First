@@ -5,10 +5,10 @@
 
 \RequirePackage[
   a4paper,
-  top=2cm,
-  bottom=2cm,
-  left=2cm,
-  right=2cm,
+  top=2.6cm,
+  bottom=2.6cm,
+  left=2.6cm,
+  right=2.6cm,
   bindingoffset=0.5cm,
   headheight=14pt,
   headsep=0.35cm,
@@ -23,6 +23,16 @@
 \RequirePackage{indentfirst}
 \RequirePackage{setspace}
 \RequirePackage{tocloft}
+\RequirePackage[
+  unicode,
+  hidelinks,
+  bookmarksnumbered=true,
+  linktoc=all
+]{hyperref}
+\pdfstringdefDisableCommands{%
+  \def\quad{ }%
+  \def\qquad{ }%
+}
 
 \IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{}
 \IfFontExistsTF{SimSun}{\newCJKfontfamily\songbold[FakeBold=2.5]{SimSun}}{\newcommand{\songbold}{\songti\bfseries}}
@@ -86,9 +96,9 @@
 
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
-\renewcommand{\contentsname}{目\quad\quad 录}
-\renewcommand{\cfttoctitlefont}{\hfill\zihao{3}\heiti}
-\renewcommand{\cftaftertoctitle}{\hfill}
+\renewcommand{\contentsname}{\makebox[6em][s]{目\hfill 录}}
+\renewcommand{\cfttoctitlefont}{\hspace*{\fill}\zihao{3}\heiti}
+\renewcommand{\cftaftertoctitle}{\hspace*{\fill}}
 \setlength{\cftbeforesecskip}{0.2em}
 
 \renewcommand{\figurename}{图}
@@ -126,6 +136,7 @@
 
 \renewenvironment{thebibliography}[1]{%
   \clearpage
+  \phantomsection
   \section*{\zihao{4}\heiti 参考文献}%
   \addcontentsline{toc}{section}{参考文献}%
   \zihao{5}\songti

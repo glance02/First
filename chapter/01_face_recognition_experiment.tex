@@ -48,6 +48,34 @@
 
 不同实验模块加载的网络略有差异。图片表情识别页面加载 Tiny Face Detector、68 点关键点、人脸描述子、表情识别和 SSD MobileNetV1；年龄与性别估计页面加载 Tiny Face Detector、68 点关键点、人脸描述子、年龄性别估计和 SSD MobileNetV1；摄像头追踪页面加载 Tiny Face Detector、68 点关键点、人脸描述子和表情识别模型。虽然部分页面加载了当前流程中未显式使用的网络，但整体仍体现了人脸分析任务的典型链式调用方式。
 
+从数学表达上看，浏览器端人脸分析可以抽象为从输入图像到一组结构化人脸属性的映射。设输入图像为
+\begin{equation}
+  I \in \mathbf{R}^{H \times W \times 3},
+\end{equation}
+其中 $H$、$W$ 分别表示图像高度和宽度，3 表示 RGB 三个颜色通道。人脸检测网络首先在图像上预测候选框集合
+\begin{equation}
+  \mathcal{B}=\{b_i=(x_i,y_i,w_i,h_i,s_i)\mid i=1,2,\ldots,n\},
+\end{equation}
+其中 $(x_i,y_i)$ 表示第 $i$ 个检测框左上角坐标，$w_i$ 和 $h_i$ 表示宽度与高度，$s_i$ 表示该框为人脸的置信度。实际绘制时只保留置信度高于阈值 $\tau$ 的检测结果，即
+\begin{equation}
+  \mathcal{B}'=\{b_i \mid s_i \geq \tau,\ b_i \in \mathcal{B}\}.
+\end{equation}
+
+在每个检测框内，关键点定位模型继续估计 68 个面部关键点：
+\begin{equation}
+  \mathcal{L}_i=\{(u_{ij},v_{ij})\mid j=1,2,\ldots,68\}.
+\end{equation}
+这些关键点描述了眉毛、眼睛、鼻子、嘴唇和脸部轮廓等局部结构，为后续表情和属性估计提供更细粒度的几何信息。表情识别可以表示为对七类表情的概率分布预测：
+\begin{equation}
+  \mathbf{p}_i=\operatorname{softmax}(\mathbf{z}_i),\qquad
+  \hat{c}_i=\arg\max_k p_{ik},
+\end{equation}
+其中 $\mathbf{z}_i$ 为模型输出的类别得分，$p_{ik}$ 表示第 $i$ 张人脸属于第 $k$ 类表情的概率，$\hat{c}_i$ 为最终显示的主表情。年龄与性别估计也可写成
+\begin{equation}
+  (\hat{a}_i,\hat{g}_i,q_i)=f_{\mathrm{attr}}(I,b_i,\mathcal{L}_i),
+\end{equation}
+其中 $\hat{a}_i$ 表示估计年龄，$\hat{g}_i$ 表示性别标签，$q_i$ 表示性别分类置信度。由此可见，项目中的链式 API 调用本质上对应了“检测框定位、关键点建模、属性分类或回归”的多阶段推理过程。
+
 \subsubsection{输入、推理与绘制流程}
 
 图片类页面的流程可以概括为以下五步。
@@ -66,6 +94,21 @@
 
 该模块的实现重点不只是调用表情模型，还包括结果解释和用户界面反馈。若没有检测到人脸，页面会显示“未检测到人脸”的空状态提示；若正在处理图片，结果区会先显示“正在识别”。这些状态反馈降低了用户对模型响应时间的困惑，也使实验页面更接近完整应用而非单纯的代码示例。
 
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{code/face-recognition/public/examples/happy.png}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{code/face-recognition/public/examples/angry.png}
+  \end{minipage}
+  \caption{表情识别示例结果}
+  \label{fig:expression_examples}
+\end{figure}
+
 \subsubsection{年龄与性别估计}
 
 年龄与性别估计由 \texttt{dist/estimation\_script.js} 实现。该模块与表情识别共用相似的图片上传和画布绘制流程，但推理链路改为在人脸检测之后继续执行关键点提取、人脸描述子提取以及年龄性别估计。模型返回的主要结果包括检测框、估计年龄、性别标签和性别置信度。
@@ -73,6 +116,13 @@
 在结果展示上，脚本将年龄四舍五入后以“岁”为单位显示，将 \texttt{male} 和 \texttt{female} 映射为“男性”和“女性”，并通过结果卡片展示每张人脸的年龄估计、性别判断和性别置信度。同时，脚本使用 \texttt{faceapi.draw.DrawBox} 在图片上叠加检测框标签，使用户能够把侧边栏中的结构化数据与图片中的具体人脸对应起来。
 
 该模块反映了多任务人脸属性估计的基本思想：人脸检测首先确定候选区域，关键点与特征提取提供面部结构信息，属性估计网络再输出年龄和性别等外观属性。需要注意的是，年龄和性别估计受光照、姿态、遮挡、图像清晰度和训练数据分布影响明显，其结果应理解为模型预测值，而不是绝对真实标签。在实际系统中，这类输出尤其不适合直接用于高风险判断。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.82\textwidth]{code/face-recognition/public/examples/age.png}
+  \caption{年龄与性别估计示例结果}
+  \label{fig:age_gender_example}
+\end{figure}
 
 \subsubsection{摄像头实时追踪}
 
@@ -91,6 +141,21 @@
 从性能角度看，图片类任务主要受模型加载时间和单次图片推理时间影响；摄像头任务还受到设备计算能力、摄像头分辨率、浏览器性能和当前页面负载影响。脚本采用 Tiny Face Detector 进行实时检测，并对侧边栏渲染做节流处理，说明项目已经考虑到实时场景中的性能压力。不过，如果输入视频分辨率较高或设备性能较弱，实时帧率仍可能下降。
 
 从可靠性角度看，该系统的结果受数据质量影响较大。正脸、光照均匀、遮挡较少的人像通常更容易得到稳定结果；侧脸、模糊、强背光、多人脸重叠或表情不明显的图片可能导致漏检、误检或属性估计偏差。摄像头功能还依赖浏览器权限和运行上下文，某些浏览器或非安全环境可能无法直接访问摄像头。因此，本实验更适合作为前端深度学习推理和人脸分析流程的教学演示，而不应被理解为生产级身份识别系统。
+
+\begin{figure}[htbp]
+  \centering
+  \begin{minipage}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{code/face-recognition/public/examples/face-detection.png}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{code/face-recognition/public/examples/collage.png}
+  \end{minipage}
+  \caption{人脸检测与综合演示效果}
+  \label{fig:face_detection_collage}
+\end{figure}
 
 \subsection{存在问题与改进方向}
 
