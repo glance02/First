@@ -70,3 +70,28 @@
 当视频开始播放时，脚本创建覆盖画布并启动定时器。每轮定时任务都会同步画布尺寸，对当前视频帧执行人脸检测、关键点定位和表情识别，再清空上一帧标注并重绘最新检测框、关键点和表情标签。视频暂停或结束时，脚本及时清除定时器，避免后台继续执行无意义的推理。
 
 \inputminted[firstline=218,lastline=259]{javascript}{code/face-recognition/dist/webcam_script.js}
+
+\subsection*{开源人脸识别模型训练代码}
+\addcontentsline{toc}{subsection}{开源人脸识别模型训练代码}
+
+本项目网页端直接使用 \mintinline{text}|face-api.js| 的预训练权重，并没有在浏览器项目中重新训练深度网络。为了说明人脸识别模型的训练思想，本节引用已经克隆到 \mintinline{text}|code/dlib/| 目录中的 dlib 开源训练示例 \mintinline{text}|dnn_metric_learning_on_images_ex.cpp|。该示例展示了如何使用 \mintinline{cpp}|loss_metric| 训练人脸嵌入模型，使同一身份的人脸向量距离更近，不同身份的人脸向量距离更远。
+
+示例开头说明了深度度量学习在人脸识别中的作用：模型不直接把图像分类为固定身份，而是学习一个向量空间，再用距离或最近邻方法完成识别。
+
+\inputminted[firstline=1,lastline=24]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+
+训练数据按身份目录组织。顶层目录下的每个子目录表示一个人物身份，子目录内保存该人物的多张图片。加载函数遍历这些子目录，形成按身份分组的图片列表，为后续 mini-batch 采样做准备。
+
+\inputminted[firstline=35,lastline=95]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+
+网络结构部分定义了训练网络和测试网络。训练网络使用带批归一化的 ResNet 主体，输出层为 \mintinline{cpp}|fc_no_bias<128>|，损失层为 \mintinline{cpp}|loss_metric|；测试网络则把批归一化替换为固定仿射变换，便于推理阶段稳定使用。
+
+\inputminted[firstline=175,lastline=188]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+
+训练阶段创建 \mintinline{cpp}|dnn_trainer|，设置学习率和同步文件，并通过多个加载线程持续产生 mini-batch。每个 mini-batch 包含多个身份以及每个身份的多张图片，使模型可以同时学习同一身份和不同身份之间的距离关系。训练结束后，示例把网络清理并序列化保存为 \mintinline{text}|metric_network_renset.dat|。
+
+\inputminted[firstline=220,lastline=280]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+
+训练完成后，示例把图片送入测试网络得到嵌入向量，并根据向量距离判断两张图片是否属于同一身份。这个过程与浏览器项目中的 \mintinline{javascript}|FaceMatcher| 思路一致：先得到人脸描述子，再依据距离阈值完成匹配。
+
+\inputminted[firstline=300,lastline=328]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}

@@ -6,7 +6,7 @@
 
 本实验基于 \mintinline{text}|code/face-recognition/| 目录中的纯前端人脸分析项目完成。该项目核心依赖为 \mintinline{text}|face-api.js|\cite{faceapi}，页面样式使用 Bootstrap 和 MDB，业务逻辑集中在 \mintinline{text}|dist/| 目录下的 JavaScript 脚本中。实验围绕三个实际页面展开：图片表情识别、图片年龄与性别估计、摄像头实时人脸追踪。通过阅读和运行这些页面，可以观察浏览器端人脸分析系统从模型加载、输入获取、模型推理到结果绘制的完整流程。
 
-本部分实验目标如下：第一，分析静态网页项目中 HTML 页面、业务脚本、模型文件和示例资源之间的组织关系；第二，说明 \mintinline{text}|face-api.js| 在图片输入和摄像头视频流输入中的调用流程；第三，分别分析表情识别、年龄与性别估计、实时追踪三个模块的功能实现；第四，总结该类前端人脸分析实验的效果、局限和改进方向。
+本部分实验目标如下：第一，分析静态网页项目中 HTML 页面、业务脚本、模型文件和示例资源之间的组织关系；第二，说明 \mintinline{text}|face-api.js| 在图片输入和摄像头视频流输入中的调用流程；第三，分别分析表情识别、年龄与性别估计、实时追踪三个模块的功能实现；第四，补充说明预训练模型的来源与人脸识别模型的训练思想；第五，总结该类前端人脸分析实验的效果、局限和改进方向。
 
 \subsection{项目结构与实验环境}
 
@@ -49,6 +49,16 @@
 \mintinline{text}|face-api.js| 是建立在 TensorFlow.js 之上的 JavaScript 人脸分析库，封装了常见的人脸检测、关键点定位、人脸描述子、表情识别以及年龄性别估计接口。项目中的脚本通过 \mintinline{javascript}|faceapi.nets.*.loadFromUri(MODEL_URL)| 加载对应网络，并使用 \mintinline{javascript}|Promise.all| 并行等待模型加载完成。模型加载完成后，脚本才会注册图片上传监听器或启动摄像头连接流程。
 
 不同实验模块加载的网络略有差异。图片表情识别页面加载 Tiny Face Detector、68 点关键点、人脸描述子、表情识别和 SSD MobileNetV1；年龄与性别估计页面加载 Tiny Face Detector、68 点关键点、人脸描述子、年龄性别估计和 SSD MobileNetV1；摄像头追踪页面加载 Tiny Face Detector、68 点关键点、人脸描述子和表情识别模型。虽然部分页面加载了当前流程中未显式使用的网络，但整体仍体现了人脸分析任务的典型链式调用方式。
+
+\subsubsection{模型来源与训练机制}
+
+需要区分的是，本项目中的 \mintinline{text}|models/| 目录保存的是 \mintinline{text}|face-api.js| 发布的预训练权重副本，而不是当前课程项目从零训练得到的新模型。页面运行时只通过 \mintinline{javascript}|loadFromUri| 把这些权重加载到浏览器端执行推理；本地保存权重的作用是减少外部网络依赖，使实验可以稳定复现。换言之，本实验分析的是预训练模型的加载、调用和结果解释，而不是完整训练出 Tiny Face Detector、表情识别或年龄性别估计网络的过程。
+
+\mintinline{text}|face-api.js| 的模型体系可以理解为多个已经训练好的子网络组合\cite{faceapiweights}。人脸检测模型负责输出人脸候选框，关键点模型负责定位面部结构，人脸识别模型输出固定长度的人脸描述子，表情与年龄性别模型则在检测到的人脸区域上进行属性预测。其中，人脸识别模型的训练思想与 dlib 深度度量学习示例一致\cite{dlibgithub}：网络把输入人脸图像映射为 128 维向量，使同一身份的图像在向量空间中距离更近，不同身份的图像距离更远。训练完成后，系统不需要直接输出“某个人”的类别，而是比较向量距离来判断两张人脸是否相似。
+
+dlib 的开源示例 \mintinline{text}|dnn_metric_learning_on_images_ex.cpp| 展示了这种训练流程\cite{dlib}。数据按身份目录组织，每个子目录包含同一人的多张图片；训练时 mini-batch 同时采样多个人和每人的多张图片，使损失函数能够同时看到正样本对和负样本对。网络主体采用 ResNet 结构，输出层为 128 维向量，损失层使用 \mintinline{cpp}|loss_metric| 约束嵌入距离。训练循环不断取出 mini-batch 调用 \mintinline{cpp}|trainer.train_one_step(images, labels)|，学习率降低到阈值后将网络序列化保存为模型文件。
+
+项目中的人物识别样本 \mintinline{text}|public/img/labeled_images| 也容易被误解为“训练集”。实际上，业务脚本只是读取这些样本图片，通过已加载的人脸识别网络提取描述子，再构造 \mintinline{javascript}|LabeledFaceDescriptors| 和 \mintinline{javascript}|FaceMatcher|。随后，新上传图片的人脸描述子会与这些参考描述子计算距离，距离低于阈值时显示对应人物名称。因此，这一步更接近“基于特征的样本登记与最近邻匹配”，并没有更新神经网络权重。
 
 从数学表达上看，浏览器端人脸分析可以抽象为从输入图像到一组结构化人脸属性的映射。设输入图像为
 \begin{equation}
