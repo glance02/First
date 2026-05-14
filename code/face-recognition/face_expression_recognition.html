@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>人脸表情识别</title>
+    <link rel="icon" href="public/img/icon.ico" type="image/x-icon" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Source+Serif+4:wght@600&display=swap"
+    />
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/mdb.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script defer src="dist/face-api.min.js"></script>
+    <script defer src="dist/expression_script.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <div class="site-nav">
+          <nav class="navbar navbar-expand-lg navbar-light">
+            <a class="navbar-brand" href="face_expression_recognition.html">
+              Face Analysis Demo
+            </a>
+            <button
+              class="navbar-toggler"
+              type="button"
+              data-toggle="collapse"
+              data-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent"
+              aria-expanded="false"
+              aria-label="切换导航"
+            >
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav ml-auto">
+                <li class="nav-item active">
+                  <a class="nav-link" href="face_expression_recognition.html"
+                    >表情识别 <span class="sr-only">（当前页）</span></a
+                  >
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="age_gender_estimation.html"
+                    >年龄与性别</a
+                  >
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="webcam_face_tracking.html"
+                    >摄像头追踪</a
+                  >
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      <main class="site-main">
+        <section class="page-section">
+          <header class="page-header">
+            <h1 class="page-title">人脸表情识别</h1>
+            <p class="page-summary">上传图片后显示检测框与表情识别结果。</p>
+          </header>
+
+          <div class="workspace-grid">
+            <aside class="sidebar-stack">
+              <section class="panel control-panel">
+                <h2 class="panel-heading">上传图片</h2>
+                <input id="upload" type="file" accept="image/*" />
+                <label for="upload" class="upload-dropzone">
+                  <span class="upload-label">选择图片</span>
+                  <span class="upload-hint">建议使用清晰、正脸较明显的照片。</span>
+                </label>
+                <p class="panel-note">支持常见 JPG、PNG 图片格式。</p>
+              </section>
+
+              <section class="panel info-panel">
+                <h2 class="panel-heading">识别结果</h2>
+                <div id="expression-results" class="result-summary">
+                  <div class="result-empty">
+                    <strong>等待识别</strong>
+                    <span>上传图片后，这里会同步显示表情识别结果副本。</span>
+                  </div>
+                </div>
+              </section>
+            </aside>
+
+            <section class="panel result-panel">
+              <div id="analysis-stage" class="analysis-stage">
+                <div class="stage-empty" data-empty-state>
+                  <strong>等待图片</strong>
+                  <span>上传后在这里显示表情识别结果。</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/popper.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/mdb.min.js"></script>
+  </body>
+</html>

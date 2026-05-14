@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>摄像头人脸追踪</title>
+    <link rel="icon" href="public/img/icon.ico" type="image/x-icon" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Source+Serif+4:wght@600&display=swap"
+    />
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/mdb.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script defer src="dist/face-api.min.js"></script>
+    <script defer src="dist/webcam_script.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="site-header">
+        <div class="site-nav">
+          <nav class="navbar navbar-expand-lg navbar-light">
+            <a class="navbar-brand" href="face_expression_recognition.html">
+              Face Analysis Demo
+            </a>
+            <button
+              class="navbar-toggler"
+              type="button"
+              data-toggle="collapse"
+              data-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent"
+              aria-expanded="false"
+              aria-label="切换导航"
+            >
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                  <a class="nav-link" href="face_expression_recognition.html"
+                    >表情识别</a
+                  >
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="age_gender_estimation.html"
+                    >年龄与性别</a
+                  >
+                </li>
+                <li class="nav-item active">
+                  <a class="nav-link" href="webcam_face_tracking.html"
+                    >摄像头追踪 <span class="sr-only">（当前页）</span></a
+                  >
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      <main class="site-main">
+        <section class="page-section webcam-page">
+          <header class="page-header">
+            <h1 class="page-title">摄像头追踪</h1>
+            <p class="page-summary">允许浏览器访问摄像头后开始显示实时识别结果。</p>
+          </header>
+
+          <div class="workspace-grid webcam-workspace">
+            <aside class="sidebar-stack">
+              <section class="panel info-panel">
+                <h2 class="panel-heading">摄像头状态</h2>
+                <div id="webcam-status" class="result-summary result-summary--compact">
+                  <div class="result-card result-card--status">
+                    <div class="result-card__header">
+                      <span class="result-card__title">等待授权</span>
+                      <span class="status-pill">未连接</span>
+                    </div>
+                    <p class="result-card__meta">
+                      允许浏览器访问摄像头后，这里会同步显示连接与识别状态。
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel info-panel">
+                <h2 class="panel-heading">识别结果</h2>
+                <div id="webcam-results" class="result-summary">
+                  <div class="result-empty">
+                    <strong>等待识别</strong>
+                    <span>摄像头开始工作后，这里会同步显示表情识别结果副本。</span>
+                  </div>
+                </div>
+              </section>
+            </aside>
+
+            <section class="panel tracking-panel">
+              <div id="tracking-stage" class="tracking-stage">
+                <div class="stage-empty" data-empty-state>
+                  <strong>等待摄像头权限</strong>
+                  <span>授权后在这里显示实时画面与识别结果。</span>
+                </div>
+                <video
+                  id="video"
+                  width="1280"
+                  height="720"
+                  autoplay
+                  muted
+                  playsinline
+                ></video>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/popper.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/mdb.min.js"></script>
+  </body>
+</html>
