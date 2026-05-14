@@ -37,6 +37,7 @@ artifacts/*
 *.synctex.gz
 *.toc
 *.xdv
+_minted/
 
 # Editor and OS files
 .vscode/

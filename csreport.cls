@@ -21,6 +21,8 @@
 \RequirePackage{fontspec}
 \RequirePackage{graphicx}
 \RequirePackage{indentfirst}
+\RequirePackage{xcolor}
+\RequirePackage{minted}
 \RequirePackage{setspace}
 \RequirePackage{tocloft}
 \RequirePackage[
@@ -36,6 +38,25 @@
 
 \IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{}
 \IfFontExistsTF{SimSun}{\newCJKfontfamily\songbold[FakeBold=2.5]{SimSun}}{\newcommand{\songbold}{\songti\bfseries}}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\setminted{
+  fontsize=\footnotesize,
+  breaklines,
+  breakanywhere,
+  autogobble,
+  linenos,
+  numbersep=6pt,
+  frame=single,
+  framesep=2mm,
+  bgcolor=codebg,
+  tabsize=2
+}
+\setmintedinline{
+  fontsize=\small,
+  breaklines,
+  breakanywhere
+}
 
 \setstretch{1.5}
 \setlength{\parindent}{2em}
