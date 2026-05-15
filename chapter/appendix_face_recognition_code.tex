@@ -10,66 +10,86 @@
 
 图片表情识别页面在文档头部延迟加载 \mintinline{text}|face-api.min.js| 和当前页面的业务脚本。主体区域左侧提供图片上传控件和识别结果容器，右侧的 \mintinline{html}|analysis-stage| 用于插入用户上传的图片和覆盖绘制结果的画布。
 
-\inputminted[firstline=21,lastline=22]{html}{code/face-recognition/face_expression_recognition.html}
+这里保留脚本标签的原因是，代码引入顺序直接影响页面能否运行。\mintinline{text}|face-api.min.js| 必须先于业务脚本加载，业务脚本才能访问 \mintinline{javascript}|faceapi| 对象；\mintinline{html}|defer| 则保证脚本在 DOM 解析完成后按顺序执行，使业务脚本能够拿到上传控件、展示区域等真实节点。
 
-\inputminted[firstline=75,lastline=101]{html}{code/face-recognition/face_expression_recognition.html}
+\inputminted[firstline=21,lastline=22,firstnumber=21]{html}{code/face-recognition/face_expression_recognition.html}
+
+\inputminted[firstline=75,lastline=101,firstnumber=75]{html}{code/face-recognition/face_expression_recognition.html}
+
+年龄与性别估计页面的入口结构与表情识别页面基本一致，只是业务脚本替换为 \mintinline{text}|dist/estimation_script.js|，结果容器也变为 \mintinline{html}|estimation-results|。这种“页面结构相同、业务脚本不同”的组织方式有利于复用样式和交互习惯。
+
+\inputminted[firstline=21,lastline=22,firstnumber=21]{html}{code/face-recognition/age_gender_estimation.html}
+
+\inputminted[firstline=75,lastline=100,firstnumber=75]{html}{code/face-recognition/age_gender_estimation.html}
 
 摄像头实时追踪页面同样通过脚本标签加载模型库和业务逻辑。页面中的追踪区域 \mintinline{html}|tracking-stage| 用来叠加视频与检测画布。
 
 \mintinline{html}|video| 元素负责承接浏览器摄像头视频流，并为后续逐帧识别提供输入。
 
-\inputminted[firstline=21,lastline=22]{html}{code/face-recognition/webcam_face_tracking.html}
+\inputminted[firstline=21,lastline=22,firstnumber=21]{html}{code/face-recognition/webcam_face_tracking.html}
 
-\inputminted[firstline=101,lastline=115]{html}{code/face-recognition/webcam_face_tracking.html}
+\inputminted[firstline=101,lastline=115,firstnumber=101]{html}{code/face-recognition/webcam_face_tracking.html}
 
 \subsection*{图片表情识别脚本}
 \addcontentsline{toc}{subsection}{图片表情识别脚本}
 
 表情识别脚本首先取得页面中的上传控件、展示区域和结果区域，并定义本地模型路径。随后通过 \mintinline{javascript}|Promise.all| 并行加载检测、关键点、人脸描述子、表情识别和 SSD MobileNetV1 模型，全部模型加载完成后才进入 \mintinline{javascript}|start| 流程。
 
-\inputminted[firstline=1,lastline=23]{javascript}{code/face-recognition/dist/expression_script.js}
+\inputminted[firstline=1,lastline=23,firstnumber=1]{javascript}{code/face-recognition/dist/expression_script.js}
+
+这一段代码体现了两个关键点。第一，\mintinline{javascript}|MODEL_URL| 指向 \mintinline{text}|./models|，说明权重从项目本地目录加载，不依赖远程网络。第二，模型加载使用 \mintinline{javascript}|Promise.all|，所有异步加载任务都完成后才调用 \mintinline{javascript}|start|。如果缺少这一步等待，用户上传图片时模型可能尚未准备好，推理调用会失败。
 
 为了让模型输出更容易阅读，脚本将 \mintinline{text}|face-api.js| 返回的英文表情标签映射为中文标签，并按检测框横坐标排序多张人脸。结果渲染函数会选出概率最高的主表情，同时把七类表情概率渲染为进度条，便于观察模型对不同表情类别的置信度分布。
 
-\inputminted[firstline=38,lastline=100]{javascript}{code/face-recognition/dist/expression_script.js}
+\inputminted[firstline=38,lastline=100,firstnumber=38]{javascript}{code/face-recognition/dist/expression_script.js}
 
 图片上传监听器是该模块的核心入口。用户选择文件后，脚本先清理旧图片和旧画布，再将文件转换为浏览器图片对象，创建覆盖画布并匹配尺寸。随后，脚本依次执行人脸检测、关键点定位、人脸描述子提取和表情识别，最后将结果缩放到展示尺寸并绘制检测框和表情标签。
 
-\inputminted[firstline=102,lastline=146]{javascript}{code/face-recognition/dist/expression_script.js}
+\inputminted[firstline=102,lastline=146,firstnumber=102]{javascript}{code/face-recognition/dist/expression_script.js}
+
+其中 \mintinline{javascript}|faceapi.bufferToImage| 负责把本地文件对象转换成浏览器可绘制的图片元素，\mintinline{javascript}|createCanvasFromMedia| 创建与图片对应的覆盖画布，\mintinline{javascript}|matchDimensions| 保证画布坐标系与图片显示尺寸一致。链式调用 \mintinline{javascript}|detectAllFaces(image).withFaceLandmarks().withFaceDescriptors().withFaceExpressions()| 表示先检测所有人脸，再补充关键点、人脸描述子和表情结果。最后的 \mintinline{javascript}|resizeResults| 用于把模型输出坐标映射回展示尺寸。
 
 \subsection*{年龄与性别估计脚本}
 \addcontentsline{toc}{subsection}{年龄与性别估计脚本}
 
 年龄与性别估计脚本与表情识别脚本结构相近，但加载的任务模型不同。它除了检测、关键点和描述子模型外，还加载 \mintinline{javascript}|ageGenderNet|，用于输出估计年龄、性别标签和性别分类置信度。
 
-\inputminted[firstline=1,lastline=17]{javascript}{code/face-recognition/dist/estimation_script.js}
+\inputminted[firstline=1,lastline=17,firstnumber=1]{javascript}{code/face-recognition/dist/estimation_script.js}
+
+这一模块同样使用本地 \mintinline{text}|models| 目录。与表情识别相比，它把任务网络从 \mintinline{javascript}|faceExpressionNet| 换成 \mintinline{javascript}|ageGenderNet|。这说明页面的基础流程可以复用：只要输入仍然是人脸区域，后续可以在同一检测结果上接入不同属性估计网络。
 
 结果渲染部分把模型返回的 \mintinline{javascript}|male| 和 \mintinline{javascript}|female| 映射为中文展示文本，并将年龄估计值四舍五入后写入结果卡片。性别置信度继续用百分比和进度条表示，使侧边栏结果能够与右侧检测框形成对照。
 
-\inputminted[firstline=38,lastline=91]{javascript}{code/face-recognition/dist/estimation_script.js}
+\inputminted[firstline=38,lastline=91,firstnumber=38]{javascript}{code/face-recognition/dist/estimation_script.js}
 
 图片推理流程仍然从上传事件开始。与表情识别不同的是，链式调用最后使用 \mintinline{javascript}|withAgeAndGender|，并在画布上额外通过 \mintinline{javascript}|faceapi.draw.DrawBox| 绘制包含年龄和性别的检测框标签。
 
-\inputminted[firstline=93,lastline=145]{javascript}{code/face-recognition/dist/estimation_script.js}
+\inputminted[firstline=93,lastline=145,firstnumber=93]{javascript}{code/face-recognition/dist/estimation_script.js}
+
+从代码结构看，年龄与性别估计和表情识别最大的差异只在两处：一是模型加载列表不同，二是链式推理末端不同。其余的文件读取、图片插入、画布创建、尺寸匹配、检测结果缩放等流程完全相似。这也说明前端人脸分析页面适合按“基础检测流程 + 任务网络”的方式扩展。
 
 \subsection*{摄像头实时追踪脚本}
 \addcontentsline{toc}{subsection}{摄像头实时追踪脚本}
 
 摄像头脚本在页面初始化时保存视频元素、追踪区域、状态区和结果区引用，并维护覆盖画布、定时器和结果刷新时间等状态。模型加载完成后进入 \mintinline{javascript}|startVideo|，为后续实时识别做准备。
 
-\inputminted[firstline=1,lastline=49]{javascript}{code/face-recognition/dist/webcam_script.js}
+\inputminted[firstline=1,lastline=49,firstnumber=1]{javascript}{code/face-recognition/dist/webcam_script.js}
+
+与图片页面不同，摄像头页面需要维护跨帧状态。\mintinline{javascript}|canvas| 保存覆盖画布，\mintinline{javascript}|detectionInterval| 保存定时器编号，\mintinline{javascript}|lastResultsMarkup| 和 \mintinline{javascript}|lastResultsRenderAt| 用于控制侧边栏刷新频率。这些变量保证页面在连续视频输入下不会不断创建新画布或过度更新 DOM。
 
 实时页面需要频繁更新侧边栏，因此脚本把结果 HTML 的生成和渲染拆开处理。渲染函数会比较本次结果与上次结果，并使用 \mintinline{javascript}|SIDEBAR_REFRESH_MS| 控制刷新间隔，避免每 100 ms 都重复写入 DOM。
 
-\inputminted[firstline=87,lastline=160]{javascript}{code/face-recognition/dist/webcam_script.js}
+\inputminted[firstline=87,lastline=160,firstnumber=87]{javascript}{code/face-recognition/dist/webcam_script.js}
 
 摄像头启动函数兼容了现代 \mintinline{javascript}|navigator.mediaDevices.getUserMedia| 和旧版浏览器前缀接口。脚本会先显示等待授权状态，在用户允许访问摄像头后把视频流写入 \mintinline{javascript}|video.srcObject|；如果浏览器不支持或授权失败，则更新状态区和结果区提示。
 
-\inputminted[firstline=162,lastline=216]{javascript}{code/face-recognition/dist/webcam_script.js}
+\inputminted[firstline=162,lastline=216,firstnumber=162]{javascript}{code/face-recognition/dist/webcam_script.js}
 
 当视频开始播放时，脚本创建覆盖画布并启动定时器。每轮定时任务都会同步画布尺寸，对当前视频帧执行人脸检测、关键点定位和表情识别，再清空上一帧标注并重绘最新检测框、关键点和表情标签。视频暂停或结束时，脚本及时清除定时器，避免后台继续执行无意义的推理。
 
-\inputminted[firstline=218,lastline=259]{javascript}{code/face-recognition/dist/webcam_script.js}
+\inputminted[firstline=218,lastline=259,firstnumber=218]{javascript}{code/face-recognition/dist/webcam_script.js}
+
+这段代码中的 \mintinline{javascript}|new faceapi.TinyFaceDetectorOptions()| 表明实时检测采用轻量级检测器。每 100 ms 执行一次推理大致相当于每秒最多 10 次检测，实际帧率还会受到设备性能、浏览器和摄像头分辨率影响。定时器中先调用 \mintinline{javascript}|clearRect| 清除上一帧绘制内容，再绘制新一帧结果，否则旧检测框会残留在画布上。
 
 \subsection*{开源人脸识别模型训练代码}
 \addcontentsline{toc}{subsection}{开源人脸识别模型训练代码}
@@ -78,20 +98,36 @@
 
 示例开头说明了深度度量学习在人脸识别中的作用：模型不直接把图像分类为固定身份，而是学习一个向量空间，再用距离或最近邻方法完成识别。
 
-\inputminted[firstline=1,lastline=24]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+\inputminted[firstline=1,lastline=27,firstnumber=1]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
 训练数据按身份目录组织。顶层目录下的每个子目录表示一个人物身份，子目录内保存该人物的多张图片。加载函数遍历这些子目录，形成按身份分组的图片列表，为后续 mini-batch 采样做准备。
 
-\inputminted[firstline=35,lastline=95]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+\inputminted[firstline=38,lastline=75,firstnumber=38]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+
+mini-batch 采样函数继续从每个身份下随机选择图片，并生成与图片对应的整数标签。这个标签不是人物姓名，而是身份在 \mintinline{cpp}|objs| 外层向量中的索引。函数还进行了颜色扰动和图像抖动，并检查同一 batch 中图片尺寸是否一致。
+
+\inputminted[firstline=77,lastline=136,firstnumber=77]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
 网络结构部分定义了训练网络和测试网络。训练网络使用带批归一化的 ResNet 主体，输出层为 \mintinline{cpp}|fc_no_bias<128>|，损失层为 \mintinline{cpp}|loss_metric|；测试网络则把批归一化替换为固定仿射变换，便于推理阶段稳定使用。
 
-\inputminted[firstline=175,lastline=188]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+\inputminted[firstline=144,lastline=194,firstnumber=144]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
 训练阶段创建 \mintinline{cpp}|dnn_trainer|，设置学习率和同步文件，并通过多个加载线程持续产生 mini-batch。每个 mini-batch 包含多个身份以及每个身份的多张图片，使模型可以同时学习同一身份和不同身份之间的距离关系。训练结束后，示例把网络清理并序列化保存为 \mintinline{text}|metric_network_renset.dat|。
 
-\inputminted[firstline=220,lastline=280]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+训练器初始化代码如下。这里的 \mintinline{cpp}|sgd(0.0001, 0.9)| 设置了权重衰减和动量，\mintinline{cpp}|set_learning_rate(0.1)| 设置初始学习率，\mintinline{cpp}|set_synchronization_file| 则用于周期性同步训练状态。
+
+\inputminted[firstline=218,lastline=227,firstnumber=218]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+
+数据加载线程通过 \mintinline{cpp}|dlib::pipe| 把图片和标签送入训练主线程。主线程只需要不断取出队列中的 batch 并调用 \mintinline{cpp}|train_one_step|，从而把耗时的图片读取、解码和增强工作与训练计算并行起来。
+
+\inputminted[firstline=229,lastline=272,firstnumber=229]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+
+学习率降到阈值以下后，示例保存网络并关闭加载线程。保存模型前调用 \mintinline{cpp}|net.clean()| 是为了去掉训练时的临时缓存，使序列化文件更适合后续推理使用。
+
+\inputminted[firstline=274,lastline=289,firstnumber=274]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
 训练完成后，示例把图片送入测试网络得到嵌入向量，并根据向量距离判断两张图片是否属于同一身份。这个过程与浏览器项目中的 \mintinline{javascript}|FaceMatcher| 思路一致：先得到人脸描述子，再依据距离阈值完成匹配。
 
-\inputminted[firstline=300,lastline=328]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+\inputminted[firstline=295,lastline=338,firstnumber=295]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
+
+最后的两两比较代码尤其值得注意。它把同标签图片距离小于阈值视为正确，把不同标签图片距离大于等于阈值视为正确。这与浏览器端最近邻匹配的逻辑一致：模型负责输出描述子，识别逻辑负责比较描述子距离并决定是否接受某个身份标签。

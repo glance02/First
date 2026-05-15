@@ -19,18 +19,13 @@
 .\latex.ps1
 ```
 
-脚本会连续运行两次：
-
-```powershell
-xelatex -interaction=nonstopmode -synctex=1 main.tex
-xelatex -interaction=nonstopmode -synctex=1 main.tex
-```
-
 连续编译两次是为了刷新目录、页码和交叉引用。修改 `main.tex`、`csreport.cls` 或 `chapter/*.tex` 后，至少运行一次 `.\latex.ps1` 验证是否能生成 `main.pdf`。
+
+如果用户没有提示要进行编译tex，请不要主动执行编译命令。
 
 ## LaTeX 写作规则
 - 正文内容优先写入 `chapter/*.tex`，不要把大段正文直接写进 `main.tex`。
-- 新增章节时，先在 `chapter/` 下创建语义清晰的文件名，再在 `main.tex` 中添加对应 `\input{chapter/文件名}`。
+- 新增章节时，先在 `chapter/` 下创建简洁的文件名，再在 `main.tex` 中添加对应 `\input{chapter/文件名}`。
 - 中文正文使用规范中文标点；英文摘要和英文关键词保持英文标点。
 - 图片放入 `img/`，正文中使用 `\includegraphics` 引用相对路径。
 - 参考文献当前使用 `chapter/references.tex` 中的 `thebibliography`，不要在各章节末尾分散放参考文献。
