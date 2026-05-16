@@ -24,28 +24,45 @@
 
 \begin{table}[htbp]
   \centering
-  \small
   \caption{浏览器端人脸分析实验页面与脚本对应关系}
   \label{tab:face_pages}
-  \begin{tabular}{p{0.42\textwidth}p{0.34\textwidth}p{0.16\textwidth}}
-    \hline
-    页面文件 & 业务脚本 & 主要功能 \\
-    \hline
-    \mintinline{text}|face_expression_recognition.html| & \mintinline{text}|dist/expression_script.js| & 图片表情识别 \\
-    \mintinline{text}|age_gender_estimation.html| & \mintinline{text}|dist/estimation_script.js| & 年龄与性别估计 \\
-    \mintinline{text}|webcam_face_tracking.html| & \mintinline{text}|dist/webcam_script.js| & 摄像头实时追踪 \\
-    \hline
-  \end{tabular}
+  \begingroup
+  \small
+  \renewcommand{\arraystretch}{1.22}
+  \setlength{\tabcolsep}{7pt}
+  \begin{tabularx}{0.96\textwidth}{@{}>{\raggedright\arraybackslash}p{0.34\textwidth}>{\raggedright\arraybackslash}p{0.36\textwidth}>{\centering\arraybackslash}X@{}}
+    \toprule
+    \textbf{页面文件} & \textbf{业务脚本} & \textbf{主要功能} \\
+    \midrule
+    \texttt{\detokenize{face_expression_recognition.html}} &
+    \texttt{\detokenize{dist/expression_script.js}} &
+    图片表情识别 \\
+    \addlinespace[2pt]
+    \texttt{\detokenize{age_gender_estimation.html}} &
+    \texttt{\detokenize{dist/estimation_script.js}} &
+    年龄与性别估计 \\
+    \addlinespace[2pt]
+    \texttt{\detokenize{webcam_face_tracking.html}} &
+    \texttt{\detokenize{dist/webcam_script.js}} &
+    摄像头实时追踪 \\
+    \bottomrule
+  \end{tabularx}
+  \endgroup
 \end{table}
 
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.24\textheight][c]{0.82\textwidth}{\centering
-  此处放置浏览器项目目录结构截图。\\
-  建议文件名：\texttt{\detokenize{img/face_api_project_tree.png}}。\\
-  截图内容建议包含 \texttt{\detokenize{dist/}}、\texttt{\detokenize{models/}}、\texttt{\detokenize{public/}} 和三个 HTML 页面。}}
-  \caption{浏览器端人脸分析项目目录结构占位图}
-  \label{fig:face_project_tree_placeholder}
+  \begin{minipage}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/chapter1/face_api_project_tree_1.png}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/chapter1/face_api_project_tree_2.png}
+  \end{minipage}
+  \caption{浏览器端人脸分析项目目录结构}
+  \label{fig:face_project_tree}
 \end{figure}
 
 \subsubsection{模型权重与本地加载}
@@ -64,7 +81,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.86\textwidth]{img/人脸表情识别运行截图.png}
+  \includegraphics[width=0.86\textwidth]{img/chapter1/人脸表情识别运行截图.png}
   \caption{表情识别页面运行截图}
   \label{fig:expression_runtime_screenshot}
 \end{figure}
@@ -105,12 +122,9 @@
 
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.22\textheight][c]{0.84\textwidth}{\centering
-  此处放置图片上传与 Canvas 标注流程图。\\
-  建议文件名：\texttt{\detokenize{img/face_api_image_canvas_flow.png}}。\\
-  建议内容：上传文件、转换图片、创建 Canvas、模型推理、绘制结果五个步骤。}}
-  \caption{图片输入与画布标注流程占位图}
-  \label{fig:image_canvas_flow_placeholder}
+  \includegraphics[width=0.88\textwidth]{img/chapter1/face_api_image_canvas_flow.png}
+  \caption{图片输入与画布标注流程}
+  \label{fig:image_canvas_flow}
 \end{figure}
 
 \subsection{表情识别模块分析}
@@ -173,14 +187,22 @@
 
 在实际应用中，这类属性输出不适合直接用于身份、资格、风险、权限等高影响决策。课程实验可以用它展示模型能力和局限，但报告中应明确说明其不确定性。这样的表述既符合技术事实，也能避免把演示模型包装成可靠判断工具。
 
+年龄与性别估计页面的运行过程可以分为输入准备和结果展示两个阶段。图 \ref{fig:age_gender_select_image} 展示了用户在页面中选择待分析图片的状态，此时页面已经提供上传入口和图片显示区域，为后续模型推理准备输入数据。
+
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.22\textheight][c]{0.84\textwidth}{\centering
-  此处放置年龄与性别估计页面运行截图。\\
-  建议文件名：\texttt{\detokenize{img/age_gender_page_runtime.png}}。\\
-  截图内容建议包含上传控件、右侧图片标注和左侧结果卡片。}}
-  \caption{年龄与性别估计页面运行截图占位图}
-  \label{fig:age_gender_runtime_placeholder}
+  \includegraphics[width=0.86\textwidth]{img/chapter1/年龄与性别估计选择图片.png}
+  \caption{年龄与性别估计页面的图片选择状态}
+  \label{fig:age_gender_select_image}
+\end{figure}
+
+完成图片上传后，脚本调用模型进行人脸检测、年龄估计和性别判断，并将结果同时绘制在图像区域和结果卡片中。图 \ref{fig:age_gender_result_display} 中可以看到，页面在检测框附近叠加了年龄与性别标签，侧边栏则以结构化形式展示估计年龄、性别类别和置信度。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.86\textwidth]{img/chapter1/年龄与性别估计结果展示.png}
+  \caption{年龄与性别估计页面的结果展示状态}
+  \label{fig:age_gender_result_display}
 \end{figure}
 
 \subsection{摄像头实时追踪模块分析}
@@ -235,12 +257,9 @@
 
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.22\textheight][c]{0.84\textwidth}{\centering
-  此处放置 HTML 关键 DOM 与脚本变量对应截图。\\
-  建议文件名：\texttt{\detokenize{img/face_api_dom_mapping.png}}。\\
-  截图内容建议左侧显示 HTML 中的 \texttt{\detokenize{id}}，右侧显示脚本中的 \texttt{\detokenize{getElementById}}。}}
-  \caption{页面 DOM 与业务脚本变量对应占位图}
-  \label{fig:dom_mapping_placeholder}
+  \includegraphics[width=0.92\textwidth]{img/chapter1/face_api_dom_mapping.png}
+  \caption{页面 DOM 与业务脚本变量对应关系}
+  \label{fig:dom_mapping}
 \end{figure}
 
 \subsubsection{建议记录的实验现象}
@@ -332,14 +351,31 @@
 
 从实验写作角度看，后续还可以补充更多真实运行截图。图片页面截图能证明上传和标注流程正常，摄像头截图能证明实时追踪有效，目录结构截图能证明模型和资源均来自本地仓库。相比只放模型示例图，真实运行截图更能体现课程项目的复现过程。
 
+表情识别页面如图 \ref{fig:expression_page_interface} 所示。该页面以图片上传为入口，右侧用于显示待分析图片和 Canvas 标注结果，左侧则展示表情类别和概率分布，适合观察单张图片中多个人脸的表情识别效果。
+
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.22\textheight][c]{0.84\textwidth}{\centering
-  此处放置三个 HTML 页面并列运行截图。\\
-  建议文件名：\texttt{\detokenize{img/face_api_three_pages.png}}。\\
-  截图内容建议展示表情识别、年龄性别估计和摄像头追踪三个页面入口或运行状态。}}
-  \caption{三个浏览器实验页面运行状态占位图}
-  \label{fig:three_pages_placeholder}
+  \includegraphics[width=0.86\textwidth]{img/chapter1/表情识别界面.png}
+  \caption{表情识别页面运行界面}
+  \label{fig:expression_page_interface}
+\end{figure}
+
+年龄与性别估计页面如图 \ref{fig:age_gender_page_interface} 所示。它与表情识别页面采用相似的上传和展示结构，但侧边栏结果重点变为估计年龄、性别类别和置信度，体现了同一套前端推理流程在不同属性任务中的复用。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.86\textwidth]{img/chapter1/年龄与性别界面.png}
+  \caption{年龄与性别估计页面运行界面}
+  \label{fig:age_gender_page_interface}
+\end{figure}
+
+摄像头追踪页面如图 \ref{fig:webcam_tracking_page_interface} 所示。该页面以实时视频流作为输入，在授权摄像头后持续更新检测框、关键点和表情结果，更能体现浏览器端模型推理在连续输入场景下的交互特点。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.86\textwidth]{img/chapter1/摄像头追踪界面.png}
+  \caption{摄像头实时追踪页面运行界面}
+  \label{fig:webcam_tracking_page_interface}
 \end{figure}
 
 \subsection{本章小结}

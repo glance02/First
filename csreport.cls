@@ -15,6 +15,8 @@
   footskip=1.75cm
 ]{geometry}
 \RequirePackage{amsmath}
+\RequirePackage{array}
+\RequirePackage{booktabs}
 \RequirePackage{caption}
 \RequirePackage{enumitem}
 \RequirePackage{fancyhdr}
@@ -24,6 +26,7 @@
 \RequirePackage{xcolor}
 \RequirePackage{minted}
 \RequirePackage{setspace}
+\RequirePackage{tabularx}
 \RequirePackage{tocloft}
 \RequirePackage[
   unicode,
