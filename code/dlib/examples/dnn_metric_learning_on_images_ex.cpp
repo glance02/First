@@ -221,10 +221,10 @@ int main(int argc, char** argv)
     trainer.set_learning_rate(0.1);
     trainer.be_verbose();
     trainer.set_synchronization_file("face_metric_sync", std::chrono::minutes(5));
-    // I've set this to something really small to make the example terminate
-    // sooner.  But when you really want to train a good model you should set
-    // this to something like 10000 so training doesn't terminate too early.
-    trainer.set_iterations_without_progress_threshold(300);
+    // Keep this small so the course experiment can finish in a reasonable time.
+    // For a real model, use much more data and a much larger threshold.
+    trainer.set_iterations_without_progress_threshold(80);
+    const unsigned long max_training_steps = 500;
 
     // If you have a lot of data then it might not be reasonable to load it all
     // into RAM.  So you will need to be sure you are decompressing your images
@@ -262,14 +262,16 @@ int main(int argc, char** argv)
     std::thread data_loader5([data_loader](){ data_loader(5); });
 
 
-    // Here we do the training.  We keep passing mini-batches to the trainer until the
-    // learning rate has dropped low enough.
-    while(trainer.get_learning_rate() >= 1e-4)
+    // Here we do the training.  The original example stops only after the learning
+    // rate becomes very small.  For this course experiment, we also cap the number
+    // of training steps so the program reaches the save-and-verify stage quickly.
+    while(trainer.get_learning_rate() >= 1e-4 && trainer.get_train_one_step_calls() < max_training_steps)
     {
         qimages.dequeue(images);
         qlabels.dequeue(labels);
         trainer.train_one_step(images, labels);
     }
+    cout << "training steps: " << trainer.get_train_one_step_calls() << endl;
 
     // Wait for training threads to stop
     trainer.get_net();

@@ -1,23 +1,36 @@
 \section{dlib 开源人脸识别实例分析}
 
-\subsection{分析目的与章节边界}
+\subsection{分析目的与基本思想}
 
-上一章分析了 \mintinline{text}|face-api.js| 如何在浏览器端加载预训练模型并完成推理。本章换一个角度，分析 dlib 官方示例 \path{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}，重点说明人脸识别模型背后的深度度量学习思想。两章之间的关系不是“同一项目的前后端实现”，而是“推理应用”和“训练思想”的对应：浏览器页面展示模型如何被调用，dlib 示例展示类似的人脸描述子模型可以如何训练。
+本章分析 dlib 官方示例 \path{dlib/examples/dnn_metric_learning_on_images_ex.cpp}。该示例以 C++ 代码展示了如何使用深度神经网络学习图像嵌入向量，并通过向量距离完成人脸身份判断。与普通图像分类不同，它的核心不是让网络直接输出某个人的姓名或类别编号，而是训练一个特征空间，使同一身份的人脸在空间中彼此接近，不同身份的人脸彼此分离。
 
-本章主体不再重复前端页面的上传、Canvas 绘制和结果渲染流程，而是围绕 C++ 示例中的训练数据组织、mini-batch 采样、网络结构、损失函数、训练器、多线程加载、模型保存和阈值验证展开。只在开头和结尾保留少量对照，帮助理解为什么浏览器项目中的 \mintinline{javascript}|FaceMatcher| 和注册样本并不等同于重新训练模型。
+围绕这一目标，本章依次分析示例中的训练数据组织、mini-batch 采样、网络结构、损失函数、训练器、多线程加载、模型保存和阈值验证过程。通过这些代码可以看到，一个人脸识别模型不仅依赖网络结构，也依赖样本组织方式、距离约束和训练工程流程。理解这些内容后，才能更准确地解释“人脸描述子为什么可以比较”以及“距离阈值为什么能用于身份判断”。
 
 在人脸识别任务中，系统真正要解决的问题通常不是把输入图像分到有限类别中，而是判断两张或多张人脸是否属于同一身份。如果直接把每个人作为一个分类类别，模型输出层就与训练集身份数量绑定。后续新增人物时，系统往往需要重新训练或微调分类器。度量学习采用不同思路：模型学习一个向量空间，使同一身份的人脸向量距离更近，不同身份的人脸向量距离更远。这样，新人物只需要登记若干参考图片并保存对应特征向量，识别时比较距离即可。
 
 dlib 示例的价值正在于此。它没有把人脸识别写成普通分类任务，而是使用 \mintinline{cpp}|loss_metric| 训练图像嵌入模型。网络最后输出 128 维向量，这个向量就是人脸描述子。描述子本身不是姓名，也不是类别编号，而是人脸在特征空间中的位置。识别阶段只需要计算向量距离，并用阈值判断相似或不相似。
 
+从数学形式看，可以把描述子网络记为函数 $f_\theta(\cdot)$，其中 $\theta$ 表示网络参数。对于输入人脸图像 $x_i$，网络输出一个 128 维向量：
+
+\begin{equation}
+  \mathbf{z}_i = f_\theta(x_i), \qquad \mathbf{z}_i \in \mathrm{R}^{128}.
+  \label{eq:face_descriptor}
+\end{equation}
+
+任意两张图片 $x_i$ 和 $x_j$ 的相似程度不再由分类概率决定，而由描述子之间的欧氏距离决定：
+
+\begin{equation}
+  d_{ij} = \lVert \mathbf{z}_i - \mathbf{z}_j \rVert_2.
+  \label{eq:descriptor_distance}
+\end{equation}
+
+若 $d_{ij}$ 小于给定阈值，则系统倾向于认为两张图片属于同一身份；若距离较大，则倾向于认为它们属于不同身份。后续训练过程的本质，就是通过调整 $\theta$，让这种距离关系尽可能符合训练标签。
+
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.24\textheight][c]{0.84\textwidth}{\centering
-  此处放置 dlib 示例源码截图。\\
-  建议文件名：\texttt{\detokenize{img/dlib_metric_learning_source.png}}。\\
-  截图内容建议包含 \texttt{\detokenize{dnn_metric_learning_on_images_ex.cpp}} 文件名和 \texttt{\detokenize{loss_metric}}、\texttt{\detokenize{net_type}} 等关键代码。}}
-  \caption{dlib 度量学习示例源码占位图}
-  \label{fig:dlib_source_placeholder}
+  \includegraphics[width=0.86\textwidth]{img/chapter2/dlib_metric_learning_source.png}
+  \caption{dlib 度量学习示例源码}
+  \label{fig:dlib_metric_learning_source}
 \end{figure}
 
 \subsection{示例入口与数据目录组织}
@@ -42,12 +55,9 @@ top_level_directory/
 
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.22\textheight][c]{0.84\textwidth}{\centering
-  此处放置训练数据目录截图。\\
-  建议文件名：\texttt{\detokenize{img/dlib_training_dataset_tree.png}}。\\
-  截图内容建议展示顶层目录、多个身份子目录和每个身份下的多张图片。}}
-  \caption{dlib 训练数据目录组织占位图}
-  \label{fig:dlib_dataset_tree_placeholder}
+  \includegraphics[width=0.86\textwidth]{img/chapter2/dlib_training_dataset_tree.png}
+  \caption{dlib 训练数据目录组织}
+  \label{fig:dlib_training_dataset_tree}
 \end{figure}
 
 \subsubsection{训练数据与参考样本的区别}
@@ -64,14 +74,34 @@ dlib 示例中的目录用于训练网络参数。程序会反复读取这些图
 
 dlib 示例通过 \mintinline{cpp}|load_mini_batch| 明确控制 batch 组成。函数参数 \mintinline{cpp}|num_people| 表示一次采样多少个不同身份，\mintinline{cpp}|samples_per_id| 表示每个身份采样多少张图片。主训练流程调用 \mintinline{cpp}|load_mini_batch(5, 5, rnd, objs, images, labels)|，即每次选择 5 个身份，每个身份选 5 张图片，共得到 25 张图片。这样，同一身份内部任意两张图片构成正样本对，不同身份之间的图片构成负样本对。
 
+设一次 mini-batch 中选择 $P$ 个身份，每个身份采样 $K$ 张图片，则 batch 大小为
+
+\begin{equation}
+  B = P K.
+  \label{eq:batch_size}
+\end{equation}
+
+在 dlib 示例的设置中，$P=5$、$K=5$，因此 $B=25$。如果只考虑无序样本对，正样本对数量为
+
+\begin{equation}
+  N_{+} = P {K \choose 2} = P \frac{K(K-1)}{2},
+  \label{eq:positive_pairs}
+\end{equation}
+
+负样本对数量为
+
+\begin{equation}
+  N_{-} = {P \choose 2}K^2 = \frac{P(P-1)}{2}K^2.
+  \label{eq:negative_pairs}
+\end{equation}
+
+代入 $P=5$、$K=5$ 可得 $N_{+}=50$、$N_{-}=250$。这说明一次 batch 中可以产生大量配对关系，而不是只产生 25 个独立训练样本。度量学习正是利用这些样本对来塑造嵌入空间。
+
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.24\textheight][c]{0.84\textwidth}{\centering
-  此处放置 mini-batch 采样示意图。\\
-  建议文件名：\texttt{\detokenize{img/dlib_minibatch_sampling.png}}。\\
-  建议内容：5 个身份，每个身份 5 张图，标出同身份正样本对和不同身份负样本对。}}
-  \caption{深度度量学习 mini-batch 采样占位图}
-  \label{fig:dlib_minibatch_placeholder}
+  \includegraphics[width=0.88\textwidth]{img/chapter2/dlib_minibatch_sampling.png}
+  \caption{深度度量学习 mini-batch 采样示意}
+  \label{fig:dlib_minibatch_sampling}
 \end{figure}
 
 \subsubsection{随机选择与标签生成}
@@ -79,6 +109,19 @@ dlib 示例通过 \mintinline{cpp}|load_mini_batch| 明确控制 batch 组成。
 \mintinline{cpp}|load_mini_batch| 首先清空 \mintinline{cpp}|images| 和 \mintinline{cpp}|labels|，然后用 \mintinline{cpp}|already_selected| 避免同一个身份在一次 batch 中被重复选中。对每个被选中的身份，函数再从该身份图片列表中随机选择 \mintinline{cpp}|samples_per_id| 张图片，调用 \mintinline{cpp}|load_image| 读取图像，并把身份编号写入 \mintinline{cpp}|labels|。
 
 这里的标签是身份在外层向量中的下标，而不是人物姓名字符串。对于训练损失来说，标签只需要表达“相同”或“不同”的关系。只要两张图片标签相同，损失函数就会把它们当作同身份样本；标签不同，就会当作不同身份样本。也就是说，度量学习并不关心类别名称的语义，只关心样本之间的关系。
+
+这一关系可以写成二值函数：
+
+\begin{equation}
+  s_{ij} =
+  \begin{cases}
+    1, & y_i = y_j,\\
+    0, & y_i \ne y_j,
+  \end{cases}
+  \label{eq:pair_label}
+\end{equation}
+
+其中 $y_i$ 和 $y_j$ 是两张图片的身份标签。当 $s_{ij}=1$ 时，样本对属于正样本对；当 $s_{ij}=0$ 时，样本对属于负样本对。后续损失函数只需要根据 $s_{ij}$ 的取值决定是拉近距离还是推远距离。
 
 \subsubsection{数据增强与尺寸约束}
 
@@ -96,12 +139,9 @@ dlib 示例通过 \mintinline{cpp}|load_mini_batch| 明确控制 batch 组成。
 
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.24\textheight][c]{0.84\textwidth}{\centering
-  此处放置网络结构示意图。\\
-  建议文件名：\texttt{\detokenize{img/dlib_resnet_descriptor_network.png}}。\\
-  建议内容：输入人脸图像、卷积与残差层、全局平均池化、128 维输出描述子。}}
-  \caption{dlib 人脸描述子网络结构占位图}
-  \label{fig:dlib_network_placeholder}
+  \includegraphics[width=0.92\textwidth]{img/chapter2/dlib_resnet_descriptor_network.png}
+  \caption{dlib 人脸描述子网络结构}
+  \label{fig:dlib_resnet_descriptor_network}
 \end{figure}
 
 \subsubsection{训练网络与测试网络}
@@ -124,9 +164,53 @@ dlib 示例通过 \mintinline{cpp}|load_mini_batch| 明确控制 batch 组成。
 
 这种目标与普通 softmax 分类不同。softmax 分类学习的是“输入属于哪个类别”，通常输出固定类别上的概率分布；度量学习学习的是“输入之间应该如何排列”，输出的是可比较的特征向量。对于人脸识别场景，后者更灵活，因为实际系统经常需要新增从未出现在训练集中的身份。
 
+dlib 的 \mintinline{cpp}|loss_metric| 可以理解为基于样本对的 hinge loss。设距离阈值为 $T$，间隔参数为 $m$。根据 dlib 默认实现，若不手动指定参数，则 $T=0.6$、$m=0.04$。对于同身份样本对，距离应小于阈值附近的安全范围，其损失可写为
+
+\begin{equation}
+  L_{ij}^{+} = \max(0, d_{ij} - T + m), \qquad y_i = y_j.
+  \label{eq:positive_loss}
+\end{equation}
+
+当 $d_{ij}$ 已经足够小，即 $d_{ij} < T-m$ 时，该项损失为 0；当同身份样本距离过大时，损失随距离增大而线性增加，反向传播会推动两个描述子靠近。
+
+对于不同身份样本对，距离应大于阈值附近的安全范围，其损失可写为
+
+\begin{equation}
+  L_{ij}^{-} = \max(0, T - d_{ij} + m), \qquad y_i \ne y_j.
+  \label{eq:negative_loss}
+\end{equation}
+
+当 $d_{ij} > T+m$ 时，不同身份样本已经分得足够开，损失为 0；当不同身份样本距离过近时，损失变为正值，训练过程会推动它们在嵌入空间中分离。综合正负样本对后，一次 mini-batch 的目标可概括为
+
+\begin{equation}
+  L =
+  \sum_{(i,j)\in \mathcal{P}} L_{ij}^{+}
+  +
+  \sum_{(i,j)\in \mathcal{N}_{h}} L_{ij}^{-},
+  \label{eq:metric_loss}
+\end{equation}
+
+其中 $\mathcal{P}$ 表示正样本对集合，$\mathcal{N}_{h}$ 表示被选入损失计算的困难负样本集合。dlib 文档说明，当 batch 中正样本对数量为 $N$ 时，损失层只选取 $N$ 个最难的非匹配样本对参与负样本损失计算。这样可以缓解负样本对数量远多于正样本对造成的不平衡问题。
+
 \subsubsection{嵌入空间的直观理解}
 
 可以把训练后的嵌入空间想象成一个高维坐标系。每张人脸图片经过网络后都会落在这个坐标系中的某个点。同一个人的多张图片虽然拍摄角度、表情和光照不同，但应该落在相近区域；不同人的图片应该落在相对远的区域。识别时，只要比较两个点之间的距离，就可以判断它们是否可能属于同一身份。
+
+因此，理想的嵌入空间应满足如下关系：
+
+\begin{equation}
+  \lVert f_\theta(x_i) - f_\theta(x_j) \rVert_2 < T,
+  \qquad y_i = y_j,
+  \label{eq:same_identity_constraint}
+\end{equation}
+
+\begin{equation}
+  \lVert f_\theta(x_i) - f_\theta(x_j) \rVert_2 \ge T,
+  \qquad y_i \ne y_j.
+  \label{eq:different_identity_constraint}
+\end{equation}
+
+公式 \ref{eq:same_identity_constraint} 和公式 \ref{eq:different_identity_constraint} 不是要求所有训练样本都能被完美分开，而是表达训练目标的方向。真实数据中存在姿态、遮挡、模糊和身份相似等复杂情况，因此损失函数采用带间隔的软约束，让模型在大量样本对上逐步逼近这种距离结构。
 
 \begin{figure}[htbp]
   \centering
@@ -292,7 +376,7 @@ dlib 示例可以帮助澄清浏览器实验中容易混淆的几个概念。第
 
 浏览器项目中的 \mintinline{javascript}|FaceMatcher| 可以理解为度量学习思想在推理端的简化使用。它并不训练网络，而是接收若干 \mintinline{javascript}|LabeledFaceDescriptors|，在新图片描述子到来时计算距离并返回最接近的标签。dlib 示例则说明这些描述子为什么具有可比较性：因为训练阶段已经通过 \mintinline{cpp}|loss_metric| 让同身份向量靠近、不同身份向量远离。
 
-因此，两章合起来可以形成完整链路：第 2 章说明模型如何通过深度度量学习获得特征空间，第 1 章说明前端页面如何加载预训练模型并在浏览器中执行推理。为了保持章节边界，本章只在这里做对照，不再展开前端页面的 DOM、Canvas 和摄像头流程。
+把训练端和推理端连起来看，可以得到较完整的人脸识别链路：训练阶段学习特征空间，推理阶段加载已经训练好的网络，将输入图片转换为描述子，再通过距离比较得到匹配结果。dlib 示例重点揭示了描述子空间的形成过程，而浏览器实验则展示了预训练描述子模型在页面中的调用方式。
 
 \subsection{实验启示与局限}
 
@@ -300,10 +384,10 @@ dlib 示例虽然展示了完整训练框架，但它仍然是教学示例，而
 
 此外，人脸识别具有明显的隐私和安全属性。训练数据必须来自合法、合规、授权的来源；模型应用也应限制在明确告知和必要范围内。课程报告分析算法流程时，也应避免把技术可行性等同于应用合理性。特别是身份识别系统，一旦用于门禁、考勤、支付或风控等场景，就必须考虑误识、拒识、偏差、数据泄露和用户权利等问题。
 
-从学习角度看，dlib 示例最值得借鉴的是方法论：用目录组织身份数据，用 mini-batch 同时提供正负样本关系，用 ResNet 提取图像特征，用 \mintinline{cpp}|loss_metric| 约束嵌入距离，用阈值完成训练后验证。这些步骤构成了人脸描述子模型训练的基本骨架。理解这个骨架后，再看浏览器端的预训练模型推理，就能更清楚地区分“模型已经学到的能力”和“页面临时完成的匹配逻辑”。
+从学习角度看，dlib 示例最值得借鉴的是方法论：用目录组织身份数据，用 mini-batch 同时提供正负样本关系，用 ResNet 提取图像特征，用 \mintinline{cpp}|loss_metric| 约束嵌入距离，用阈值完成训练后验证。这些步骤构成了人脸描述子模型训练的基本骨架。理解这个骨架后，再看浏览器端的预训练模型推理，就能更清楚地理解模型能力与匹配逻辑之间的关系。
 
 \subsection{本章小结}
 
 本章围绕 dlib 官方示例 \path{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}，分析了深度度量学习在人脸识别中的训练流程。示例通过按身份组织图片、构造包含多个身份和多张图片的 mini-batch、使用数据增强提升鲁棒性、采用 ResNet 主体网络输出 128 维描述子，并通过 \mintinline{cpp}|loss_metric| 约束同身份和不同身份样本之间的距离。
 
-训练完成后，模型被序列化保存，并可以通过描述子距离和阈值进行验证。这种“描述子提取 + 距离判断”的思想解释了人脸识别系统为什么不必把每个人都作为固定分类类别，也解释了浏览器实验中注册样本和 \mintinline{javascript}|FaceMatcher| 的作用。与上一章结合后，报告能够从训练思想和前端推理两个层面说明人脸分析系统的整体工作方式。
+训练完成后，模型被序列化保存，并可以通过描述子距离和阈值进行验证。这种“描述子提取 + 距离判断”的思想解释了人脸识别系统为什么不必把每个人都作为固定分类类别，也解释了浏览器实验中注册样本和 \mintinline{javascript}|FaceMatcher| 的作用。至此，报告能够从模型训练和前端推理两个层面说明人脸分析系统的整体工作方式。

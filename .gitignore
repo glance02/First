@@ -21,6 +21,7 @@ artifacts/*
 *.pt
 *.pth
 *.ckpt
+code/dlib/examples/build-wsl/
 
 # LaTeX build intermediates
 *.aux
@@ -34,7 +35,6 @@ artifacts/*
 *.lot
 *.out
 *.run.xml
-*.synctex.gz
 *.toc
 *.xdv
 _minted/
