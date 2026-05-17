@@ -1,9 +1,9 @@
 \clearpage
 \phantomsection
-\section*{附录\quad 人脸分析实验关键代码}
-\addcontentsline{toc}{section}{附录\quad 人脸分析实验关键代码}
+\section*{附录\quad 实验关键代码}
+\addcontentsline{toc}{section}{附录\quad 实验关键代码}
 
-本附录列出浏览器端人脸分析实验中与功能实现直接相关的页面结构和业务脚本片段。为避免重复展示第三方库源码，附录不收录 \mintinline{text}|face-api.min.js|，只展示页面如何引入模型库、承载输入输出区域，以及三个实验模块如何完成模型加载、图片推理、结果渲染和摄像头实时追踪。
+本附录列出报告实验中与功能实现直接相关的关键代码片段。为避免重复展示第三方库源码，附录不收录 \mintinline{text}|face-api.min.js|，只展示页面如何引入模型库、承载输入输出区域，以及三个实验模块如何完成模型加载、图片推理、结果渲染和摄像头实时追踪。同时，附录还收录 dlib 人脸识别训练示例的关键代码，以及 Unity 森林 VR 场景中用于修复材质显示问题的 Shader 文件。
 
 \subsection*{页面入口与展示容器}
 \addcontentsline{toc}{subsection}{页面入口与展示容器}
@@ -131,3 +131,10 @@ mini-batch 采样函数继续从每个身份下随机选择图片，并生成与
 \inputminted[firstline=295,lastline=338,firstnumber=295]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
 最后的两两比较代码尤其值得注意。它把同标签图片距离小于阈值视为正确，把不同标签图片距离大于等于阈值视为正确。这与浏览器端最近邻匹配的逻辑一致：模型负责输出描述子，识别逻辑负责比较描述子距离并决定是否接受某个身份标签。
+
+\subsection*{Unity 森林场景 URP Shader 修复代码}
+\addcontentsline{toc}{subsection}{Unity 森林场景 URP Shader 修复代码}
+
+第三章中森林资源包导入 Unity 6 + URP 项目后出现大面积粉色材质，核心原因是原资源包自带的 \mintinline{text}|StandardNoCulling.shader| 使用旧 Built-in Render Pipeline 的 Surface Shader 写法，无法在 URP 中正常渲染。本节收录修改后的 Shader 文件。该文件将原 Shader 改写为 URP 可用的 HLSL 实现，并保留双面渲染、透明裁剪、基础贴图、颜色、光滑度和阴影投射等植被材质所需功能。
+
+\inputminted{text}{code/chapter3/StandardNoCulling.shader}

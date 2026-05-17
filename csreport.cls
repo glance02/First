@@ -11,7 +11,7 @@
   right=2.6cm,
   bindingoffset=0.5cm,
   headheight=14pt,
-  headsep=0.35cm,
+  headsep=0.6cm,
   footskip=1.75cm
 ]{geometry}
 \RequirePackage{amsmath}
@@ -42,23 +42,38 @@
 \IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{}
 \IfFontExistsTF{SimSun}{\newCJKfontfamily\songbold[FakeBold=2.5]{SimSun}}{\newcommand{\songbold}{\songti\bfseries}}
 
-\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codebg}{RGB}{247,249,252}
+\definecolor{codeborder}{RGB}{120,145,175}
+\definecolor{codelinenos}{RGB}{135,148,166}
+\definecolor{inlinecodebg}{RGB}{241,245,249}
+
+\usemintedstyle{friendly}
+
 \setminted{
   fontsize=\footnotesize,
   breaklines,
   breakanywhere,
   autogobble,
   linenos,
-  numbersep=6pt,
-  frame=single,
-  framesep=2mm,
+  numbersep=8pt,
+  frame=leftline,
+  framerule=1.2pt,
+  framesep=2.5mm,
+  rulecolor=\color{codeborder},
   bgcolor=codebg,
-  tabsize=2
+  xleftmargin=1em,
+  tabsize=2,
+  baselinestretch=1.05,
+  numberblanklines=false
+}
+\renewcommand{\theFancyVerbLine}{%
+  \textcolor{codelinenos}{\scriptsize\arabic{FancyVerbLine}}%
 }
 \setmintedinline{
-  fontsize=\small,
+  fontsize=\footnotesize,
   breaklines,
-  breakanywhere
+  breakanywhere,
+  bgcolor=inlinecodebg
 }
 
 \setstretch{1.5}

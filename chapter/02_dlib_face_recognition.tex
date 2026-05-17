@@ -68,7 +68,7 @@ dlib 示例中的目录用于训练网络参数。程序会反复读取这些图
 
 \subsection{mini-batch 采样机制}
 
-\subsubsection{为什么度量学习依赖 batch 组成}
+\subsubsection{度量学习依赖 batch 组成的原因}
 
 普通分类任务的 mini-batch 只需要包含图片和类别标签，模型通过分类损失学习每张图片属于哪个类别。度量学习则更依赖 batch 内部的配对关系。一次训练步骤中，损失函数需要同时看到“应该靠近的样本对”和“应该远离的样本对”。如果 batch 中每个身份只有一张图片，就无法形成同身份正样本对；如果 batch 中身份数量太少，又缺少足够的负样本对。
 
@@ -212,16 +212,6 @@ dlib 的 \mintinline{cpp}|loss_metric| 可以理解为基于样本对的 hinge l
 
 公式 \ref{eq:same_identity_constraint} 和公式 \ref{eq:different_identity_constraint} 不是要求所有训练样本都能被完美分开，而是表达训练目标的方向。真实数据中存在姿态、遮挡、模糊和身份相似等复杂情况，因此损失函数采用带间隔的软约束，让模型在大量样本对上逐步逼近这种距离结构。
 
-\begin{figure}[htbp]
-  \centering
-  \fbox{\parbox[c][0.24\textheight][c]{0.84\textwidth}{\centering
-  此处放置嵌入空间距离示意图。\\
-  建议文件名：\texttt{\detokenize{img/face_embedding_space.png}}。\\
-  建议内容：二维简化坐标中，同一身份样本聚成一簇，不同身份簇之间距离较远，并标出距离阈值。}}
-  \caption{人脸嵌入空间与距离阈值占位图}
-  \label{fig:embedding_space_placeholder}
-\end{figure}
-
 需要强调的是，实际描述子是 128 维，无法直接画在二维平面上。占位图中的二维图只是一种教学示意，用于说明“同类靠近、异类远离”的思想。真实模型中的距离关系由训练数据、网络结构和损失函数共同决定。
 
 \subsection{训练器与优化过程}
@@ -258,16 +248,6 @@ dlib 的 \mintinline{cpp}|loss_metric| 可以理解为基于样本对的 hinge l
 
 这种结构把 I/O 和计算分离。对于大规模图片训练，如果没有数据加载队列，训练线程可能频繁等待磁盘和 CPU 图像解码；有了队列之后，只要加载速度足够快，训练线程就能持续获得 batch。示例虽然是教学代码，但已经体现了真实训练系统常用的流水线思想。
 
-\begin{figure}[htbp]
-  \centering
-  \fbox{\parbox[c][0.24\textheight][c]{0.84\textwidth}{\centering
-  此处放置 dlib 主函数训练流程图。\\
-  建议文件名：\texttt{\detokenize{img/dlib_main_training_flow.png}}。\\
-  建议内容：参数检查、读取数据、初始化网络、启动加载线程、训练循环、保存模型、验证阈值。}}
-  \caption{dlib 示例主函数训练流程占位图}
-  \label{fig:dlib_main_flow_placeholder}
-\end{figure}
-
 \subsection{多线程数据加载}
 
 \subsubsection{为什么需要异步加载}
@@ -284,12 +264,90 @@ dlib 的 \mintinline{cpp}|loss_metric| 可以理解为基于样本对的 hinge l
 
 \begin{figure}[htbp]
   \centering
-  \fbox{\parbox[c][0.22\textheight][c]{0.84\textwidth}{\centering
-  此处放置训练日志或多线程加载示意截图。\\
-  建议文件名：\texttt{\detokenize{img/dlib_training_log.png}}。\\
-  截图内容建议包含训练日志输出、学习率变化或数据加载队列示意。}}
-  \caption{dlib 训练日志与数据加载占位图}
-  \label{fig:dlib_training_log_placeholder}
+  \includegraphics[width=0.94\textwidth]{img/chapter2/dlib_training_log.png}
+  \caption{dlib 度量学习训练日志可视化}
+  \label{fig:dlib_training_log}
+\end{figure}
+
+图 \ref{fig:dlib_training_log} 根据本次运行生成的 \path{code/dlib/examples/train.log} 绘制。日志显示，训练数据中共有 5 个身份目录，训练过程共执行 500 个 step。平均损失在前期迅速下降，随后学习率从 0.1 依次降低到 0.01 和 0.001，说明训练器在后期逐步减小参数更新幅度。训练结束后的简单配对验证结果为 \mintinline{text}|num_right: 300|、\mintinline{text}|num_wrong: 0|，表示当前随机 batch 中 300 个样本对均被阈值规则正确区分。
+
+为了便于对照图中的曲线和学习率阶段，训练日志中的关键片段如下：
+
+\begin{minted}{text}
+objs.size(): 5
+step#: 11    learning rate: 0.1    average loss: 4.33944
+step#: 80    learning rate: 0.1    average loss: 0.00936225
+step#: 371   learning rate: 0.01   average loss: 7.73552e-05
+step#: 464   learning rate: 0.001  average loss: 6.41373e-05
+training steps: 500
+done training
+num_right: 300
+num_wrong: 0
+\end{minted}
+
+\subsection{WSL 环境下的示例编译与运行记录}
+
+\subsubsection{创建构建目录并生成工程}
+
+为了验证 dlib 官方示例能够在本地环境中运行，本实验在 WSL 环境下进入 \mintinline{text}|code/dlib/examples| 目录，并单独创建 \mintinline{text}|build-wsl| 作为构建目录。这样可以把 CMake 生成的中间文件与示例源码分离，便于后续重新构建和清理。实际执行的命令如下：
+
+\begin{minted}{bash}
+mkdir build-wsl
+cd build-wsl
+cmake .. -DCMAKE_BUILD_TYPE=Release
+\end{minted}
+
+其中，\mintinline{bash}|cmake ..| 表示以上一级目录中的 \mintinline{text}|CMakeLists.txt| 作为工程入口，\mintinline{bash}|-DCMAKE_BUILD_TYPE=Release| 用于生成发布配置，使后续训练程序以优化后的方式编译。图 \ref{fig:wsl_cmake_configure} 展示了创建构建目录并执行 CMake 配置的过程。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{img/chapter2/使用wsl编译1.png}
+  \caption{WSL 环境下创建 build-wsl 目录并执行 CMake 配置}
+  \label{fig:wsl_cmake_configure}
+\end{figure}
+
+\subsubsection{编译度量学习示例目标}
+
+CMake 配置完成后，需要在构建目录中编译具体示例目标。这里选择的目标是 \mintinline{text}|dnn_metric_learning_on_images_ex|，对应本章分析的 \path{dlib/examples/dnn_metric_learning_on_images_ex.cpp}。编译命令如下：
+
+\begin{minted}{bash}
+cmake --build . --target dnn_metric_learning_on_images_ex -j4
+\end{minted}
+
+其中，\mintinline{bash}|--build .| 表示在当前构建目录中执行构建，\mintinline{bash}|--target dnn_metric_learning_on_images_ex| 指定只编译度量学习示例，\mintinline{bash}|-j4| 表示使用 4 个并行任务加快编译速度。图 \ref{fig:wsl_cmake_build_target} 展示了该目标的编译过程。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{img/chapter2/使用wsl编译2.png}
+  \caption{使用 CMake 编译 dnn\_metric\_learning\_on\_images\_ex 示例目标}
+  \label{fig:wsl_cmake_build_target}
+\end{figure}
+
+\subsubsection{返回 examples 目录并运行训练}
+
+示例程序编译完成后，实验返回上一级 \mintinline{text}|examples| 目录，并启动训练相关命令。截图中的执行过程如下：
+
+\begin{minted}{bash}
+cd ..
+cmake --build . --target dnn_metric_learning_on_images_ex -j4
+\end{minted}
+
+这一阶段的重点是从构建结果进入示例运行流程，观察程序是否能够正常加载训练数据、输出训练日志并进入优化过程。图 \ref{fig:wsl_training_start} 展示了返回目录后继续执行示例目标的过程。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{img/chapter2/使用wsl编译3.png}
+  \caption{返回 examples 目录后继续执行度量学习示例}
+  \label{fig:wsl_training_start}
+\end{figure}
+
+训练过程结束后，终端会输出训练完成信息，并保存训练得到的模型文件。图 \ref{fig:wsl_training_finished} 展示了本次运行结束时的终端状态。结合前文对训练循环的分析可以看出，命令行中的输出对应了数据读取、mini-batch 训练、学习率变化、模型清理和序列化保存等步骤。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\textwidth]{img/chapter2/使用wsl编译4.png}
+  \caption{dlib 度量学习示例训练结束}
+  \label{fig:wsl_training_finished}
 \end{figure}
 
 \subsection{训练数据准备与质量控制}
@@ -359,16 +417,6 @@ dlib 示例关注度量学习训练本身，没有完整展开人脸检测和对
 阈值选择本质上是在误识和拒识之间取舍。误识是把不同身份判断为同一人，拒识是把同一身份判断为不同人。降低阈值通常会减少误识，但增加拒识；提高阈值通常会减少拒识，但增加误识。不同应用对两类错误的容忍度不同，因此不能只说某个阈值“最好”，而应结合应用场景选择。
 
 例如，在门禁或支付等安全场景中，误识可能造成更严重后果，因此阈值应更严格；在照片聚类或相册整理场景中，偶尔把同一人拆成两个簇的代价较低，可以使用相对宽松的策略，再允许用户手动修正。课程实验中应重点说明阈值的作用和取舍，而不是把某个固定阈值视为普遍适用。
-
-\begin{figure}[htbp]
-  \centering
-  \fbox{\parbox[c][0.22\textheight][c]{0.84\textwidth}{\centering
-  此处放置阈值评估曲线示意图。\\
-  建议文件名：\texttt{\detokenize{img/face_threshold_tradeoff.png}}。\\
-  建议内容：横轴为距离阈值，纵轴为误识率和拒识率，展示阈值变化带来的取舍。}}
-  \caption{距离阈值选择与错误类型取舍占位图}
-  \label{fig:threshold_tradeoff_placeholder}
-\end{figure}
 
 \subsection{与浏览器实验的对应关系}
 
