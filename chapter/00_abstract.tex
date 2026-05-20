@@ -1,11 +1,11 @@
 \begin{abstractcn}
-这里填写中文摘要。摘要应简要说明报告的研究目的、方法、主要工作、成果和结论，正文中不放图表和注释，一般控制在300字左右。
+本报告围绕虚拟现实课程的作业展开。首先，针对课堂汇报中的人脸分析与识别主题，完成了浏览器端人脸分析项目的复现和 dlib 人脸识别示例的解析。基于 face-api.js，分析了静态网页中模型加载、图片输入、摄像头视频流处理与 Canvas 可视化流程，实现了人脸检测、关键点定位、表情识别以及年龄性别估计；结合 dlib 官方度量学习示例，进一步剖析了训练数据组织、mini-batch 采样、ResNet 描述子网络、loss\_metric 损失函数与距离阈值验证机制，阐明人脸描述子模型如何通过特征距离完成身份比较。此外，在完成课程要求的基础上，本文还开展了面向三维虚拟场景搭建的附加实践：使用 Unity VR 模板构建森林场景，导入森林、花卉与动物资源，修复旧资源在 Unity 6 + URP 环境下的粉色材质问题，接入 XR Origin 与移动系统，并完成 Windows 平台的打包运行。报告涵盖了模型推理、工程实现、资源兼容与场景发布等课程实践内容。
 
-\keywords{关键词一；关键词二；关键词三}
+\keywords{人脸分析；人脸识别；face-api.js；dlib；度量学习；Unity；虚拟现实；URP}
 \end{abstractcn}
 
 \begin{abstracten}
-Write the English abstract here. The English abstract should correspond to the Chinese abstract and summarize the purpose, methods, main work, results, and conclusions of the report.
+This report presents the coursework for a virtual reality course. The required assignment addresses the topic of face analysis and recognition presented in class, encompassing the reproduction of a browser-based face analysis project and a detailed examination of a dlib face recognition example. Building on face-api.js, the report analyzes the pipeline of model loading, image input processing, live camera video handling, and Canvas-based visualization in a static web page, achieving face detection, landmark localization, expression recognition, and age and gender estimation. Through dlib's official metric learning example, it further examines training data organization, mini-batch sampling, the ResNet descriptor network, the loss\_metric loss function, and distance-threshold verification, illustrating how face descriptor models perform identity comparison via feature distances. Beyond the course requirements, an additional exercise on three-dimensional virtual scene construction was undertaken: a forest scene is built using the Unity VR template, populated with forest, flower, and animal assets, with pink material issues caused by legacy assets under Unity 6 with URP resolved; XR Origin and locomotion systems are then integrated, and the project is packaged for Windows deployment. The report covers model inference, engineering implementation, asset compatibility, and scene deployment as practical coursework outcomes.
 
-\enkeywords{keyword one; keyword two; keyword three}
+\enkeywords{face analysis; face recognition; face-api.js; dlib; metric learning; Unity; virtual reality; URP}
 \end{abstracten}
