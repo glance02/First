@@ -25,6 +25,7 @@
 \RequirePackage{indentfirst}
 \RequirePackage{xcolor}
 \RequirePackage{minted}
+\RequirePackage{seqsplit}
 \RequirePackage{setspace}
 \RequirePackage{tabularx}
 \RequirePackage{tocloft}
@@ -46,6 +47,14 @@
 \definecolor{codeborder}{RGB}{120,145,175}
 \definecolor{codelinenos}{RGB}{135,148,166}
 \definecolor{inlinecodebg}{RGB}{241,245,249}
+\definecolor{ReportBlue}{HTML}{1F4E79}
+
+\DeclareRobustCommand{\cmd}[1]{%
+  \begingroup
+  \edef\csreport@cmdtext{\detokenize{#1}}%
+  \ttfamily\textcolor{ReportBlue}{\expandafter\seqsplit\expandafter{\csreport@cmdtext}}%
+  \endgroup
+}
 
 \usemintedstyle{friendly}
 
@@ -104,6 +113,16 @@
   \clearpage
   \pagenumbering{arabic}%
   \pagestyle{csreportstyle}%
+}
+
+\newcommand{\reporttoc}{%
+  \clearpage
+  \begingroup
+  \pagestyle{empty}%
+  \let\ps@plain\ps@empty
+  \tableofcontents
+  \clearpage
+  \endgroup
 }
 
 \ctexset{

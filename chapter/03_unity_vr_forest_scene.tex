@@ -4,9 +4,9 @@
 
 本章围绕 Unity 中森林虚拟现实场景的构建过程展开。与前两章侧重人脸识别算法和浏览器端推理不同，本章的重点转向三维场景资源的导入、渲染管线兼容性处理、VR 视角接入、移动方式配置以及场景细节丰富。实验目标不是简单打开一个资源包样例场景，而是在 Unity VR 模板项目中完成一个能够正常显示、能够进入、能够移动并具有一定自然环境细节的森林 VR 场景。
 
-本实验的实现过程可以概括为五个阶段。首先，使用 Unity VR 模板创建项目，获得 XR 视角、手部控制器、输入动作和移动组件等基础配置。其次，从 Asset Store 下载森林环境资源，并以 \mintinline{text}|Fantasy Forest Environment Free Sample| 的样例场景作为主体环境。再次，处理旧资源包导入 Unity 6 + Universal Render Pipeline 后出现的粉色材质问题，使地形、树木、草地和树叶能够正常渲染。然后，将 VR 模板中的 XR Origin 接入森林场景，并说明连续移动和传送移动的输入管理逻辑。最后，继续导入 \mintinline{text}|PolyRonin/Pine Forest Pack| 中的花卉预制体，对场景进行装饰，使最终展示效果更加丰富。
+本实验的实现过程可以概括为五个阶段。首先，使用 Unity VR 模板创建项目，获得 XR 视角、手部控制器、输入动作和移动组件等基础配置。其次，从 Asset Store 下载森林环境资源，并以 \cmd{Fantasy Forest Environment Free Sample} 的样例场景作为主体环境。再次，处理旧资源包导入 Unity 6 + Universal Render Pipeline 后出现的粉色材质问题，使地形、树木、草地和树叶能够正常渲染。然后，将 VR 模板中的 XR Origin 接入森林场景，并说明连续移动和传送移动的输入管理逻辑。最后，继续导入 \cmd{PolyRonin/Pine Forest Pack} 中的花卉预制体，对场景进行装饰，使最终展示效果更加丰富。
 
-在资源选择上，本次实验一共下载了三个 Asset Store 资源包。其中，实际用于场景构建的有两个：\mintinline{text}|Fantasy Forest Environment Free Sample| 和 \mintinline{text}|PolyRonin/Pine Forest Pack|。第三个资源包为 \mintinline{text}|Cosmic_Retro_RecreationRoom_FREE|，由于其风格偏向室内复古休闲空间，与本章森林自然场景的主题不匹配，因此只进行了下载和评估，没有将其中资源加入最终场景。
+在资源选择上，本次实验一共下载了三个 Asset Store 资源包。其中，实际用于场景构建的有两个：\cmd{Fantasy Forest Environment Free Sample} 和 \cmd{PolyRonin/Pine Forest Pack}。第三个资源包为 \cmd{Cosmic_Retro_RecreationRoom_FREE}，由于其风格偏向室内复古休闲空间，与本章森林自然场景的主题不匹配，因此只进行了下载和评估，没有将其中资源加入最终场景。
 
 \subsection{创建 VR 项目与导入主体森林场景}
 
@@ -37,11 +37,11 @@
   \label{fig:unity_enter_project}
 \end{figure}
 
-当前实验项目使用的 Unity 版本为 \mintinline{text}|6000.3.14f1|，渲染管线为 Universal Render Pipeline，URP 包版本为 \mintinline{text}|17.3.0|。这些信息会直接影响后续资源包的兼容性判断。旧版资源包如果主要面向 Built-in Render Pipeline，在 URP 项目中常见的问题就是材质和 Shader 无法正常工作，最终表现为场景物体变成粉色。
+当前实验项目使用的 Unity 版本为 \cmd{6000.3.14f1}，渲染管线为 Universal Render Pipeline，URP 包版本为 \cmd{17.3.0}。这些信息会直接影响后续资源包的兼容性判断。旧版资源包如果主要面向 Built-in Render Pipeline，在 URP 项目中常见的问题就是材质和 Shader 无法正常工作，最终表现为场景物体变成粉色。
 
 \subsubsection{导入 Fantasy Forest Environment Free Sample}
 
-项目创建完成后，实验从 Asset Store 查找森林环境资源。首先进入 Asset Store，如图 \ref{fig:unity_go_asset_store} 所示，并选择 \mintinline{text}|Fantasy Forest Environment Free Sample| 作为主体资源包。该资源包包含森林样例场景、地形、树木、草地、贴图、材质和 Shader 文件，适合作为 VR 森林漫游场景的基础环境。
+项目创建完成后，实验从 Asset Store 查找森林环境资源。首先进入 Asset Store，如图 \ref{fig:unity_go_asset_store} 所示，并选择 \cmd{Fantasy Forest Environment Free Sample} 作为主体资源包。该资源包包含森林样例场景、地形、树木、草地、贴图、材质和 Shader 文件，适合作为 VR 森林漫游场景的基础环境。
 
 \begin{figure}[htbp]
   \centering
@@ -57,7 +57,7 @@
   \label{fig:unity_asset_store_page}
 \end{figure}
 
-资源包导入后，项目中新增 \mintinline{text}|Assets/Fantasy Forest Environment Free Sample| 目录。该目录提供了可直接打开的样例场景 \mintinline{text}|demoScene_free.unity|，因此我以该样例为基础，后续进行了一些修改。
+资源包导入后，项目中新增 \cmd{Assets/Fantasy Forest Environment Free Sample} 目录。该目录提供了可直接打开的样例场景 \cmd{demoScene_free.unity}，因此我以该样例为基础，后续进行了一些修改。
 
 \begin{figure}[htbp]
   \centering
@@ -70,7 +70,7 @@
 
 \subsubsection{粉色材质现象与原因分析}
 
-打开 \mintinline{text}|demoScene_free.unity| 后，场景中的大量模型和材质显示为粉色，如图 \ref{fig:unity_forest_pink} 所示。在 Unity 中，粉色通常表示材质引用的 Shader 无法在当前渲染环境中编译或使用。也就是说，场景资源本身已经成功导入，但其材质系统与当前 Unity 6 + URP 项目不兼容。
+打开 \cmd{demoScene_free.unity} 后，场景中的大量模型和材质显示为粉色，如图 \ref{fig:unity_forest_pink} 所示。在 Unity 中，粉色通常表示材质引用的 Shader 无法在当前渲染环境中编译或使用。也就是说，场景资源本身已经成功导入，但其材质系统与当前 Unity 6 + URP 项目不兼容。
 
 \begin{figure}[htbp]
   \centering
@@ -79,25 +79,25 @@
   \label{fig:unity_forest_pink}
 \end{figure}
 
-进一步检查资源包后可以发现，\mintinline{text}|Fantasy Forest Environment Free Sample| 推荐的 Unity 版本为 \mintinline{text}|2021.3.9f1|，资源主要面向 Built-in Render Pipeline。当前实验项目使用的是 Unity 6 和 URP 17.3.0，两者在 Shader 写法、光照函数、渲染标签和材质属性上存在差异。资源包中的 \mintinline{text}|StandardNoCulling.shader| 使用旧的 Surface Shader 写法，例如 \mintinline{text}|#pragma surface surf StandardSpecular|，而 URP 不支持 Built-in 管线的 Surface Shader，因此相关材质无法正常显示。
+进一步检查资源包后可以发现，\cmd{Fantasy Forest Environment Free Sample} 推荐的 Unity 版本为 \cmd{2021.3.9f1}，资源主要面向 Built-in Render Pipeline。当前实验项目使用的是 Unity 6 和 URP 17.3.0，两者在 Shader 写法、光照函数、渲染标签和材质属性上存在差异。资源包中的 \cmd{StandardNoCulling.shader} 使用旧的 Surface Shader 写法，例如 \cmd{#pragma surface surf StandardSpecular}，而 URP 不支持 Built-in 管线的 Surface Shader，因此相关材质无法正常显示。
 
 森林资源中的草、树叶和树枝还具有特殊性。它们通常通过带透明通道的贴图表现叶片轮廓，同时需要从正反两面都能看到。如果直接将所有材质替换为普通 URP Lit Shader，虽然可能解决粉色显示问题，但容易破坏植被的双面显示、透明裁剪和阴影效果。因此，本实验采用的方案是保留原 Shader 名称，将其内部实现改写为 URP 可用的 HLSL Shader。
 
 \subsubsection{改写 StandardNoCulling Shader}
 
-本次代码级修复集中在资源包自带的 \mintinline{text}|StandardNoCulling.shader|。为了便于报告展示，修改后的文件已整理到 \mintinline{text}|code/chapter3/StandardNoCulling.shader|，完整代码见附录“Unity 森林场景 URP Shader 修复代码”。
+本次代码级修复集中在资源包自带的 \cmd{StandardNoCulling.shader}。为了便于报告展示，修改后的文件已整理到 \cmd{code/chapter3/StandardNoCulling.shader}，完整代码见附录“Unity 森林场景 URP Shader 修复代码”。
 
-修复后的 Shader 保留了原资源需要的 \mintinline{text}|_MainTex|、\mintinline{text}|_Color|、\mintinline{text}|_Cutoff| 和 \mintinline{text}|_Glossiness| 属性。其中，\mintinline{text}|_MainTex| 用于基础贴图，\mintinline{text}|_Color| 用于颜色叠加，\mintinline{text}|_Cutoff| 用于透明裁剪阈值，\mintinline{text}|_Glossiness| 用于控制表面光滑度。新的 SubShader 增加 \mintinline{text}|RenderPipeline = UniversalPipeline| 标签，并使用 \mintinline{text}|UniversalForward| pass 完成 URP 下的正向渲染。
+修复后的 Shader 保留了原资源需要的 \cmd{_MainTex}、\cmd{_Color}、\cmd{_Cutoff} 和 \cmd{_Glossiness} 属性。其中，\cmd{_MainTex} 用于基础贴图，\cmd{_Color} 用于颜色叠加，\cmd{_Cutoff} 用于透明裁剪阈值，\cmd{_Glossiness} 用于控制表面光滑度。新的 SubShader 增加 \cmd{RenderPipeline = UniversalPipeline} 标签，并使用 \cmd{UniversalForward} pass 完成 URP 下的正向渲染。
 
-在片元阶段，Shader 先采样基础贴图，再根据贴图 alpha 执行透明裁剪，随后构造 URP 所需的 \mintinline{text}|InputData| 和 \mintinline{text}|SurfaceData|，最后调用 URP 光照函数输出结果。这样既解决了旧 Surface Shader 无法在 URP 中运行的问题，又使草地、树叶、树干等对象能够继续获得基本的光照表现。
+在片元阶段，Shader 先采样基础贴图，再根据贴图 alpha 执行透明裁剪，随后构造 URP 所需的 \cmd{InputData} 和 \cmd{SurfaceData}，最后调用 URP 光照函数输出结果。这样既解决了旧 Surface Shader 无法在 URP 中运行的问题，又使草地、树叶、树干等对象能够继续获得基本的光照表现。
 
 \subsubsection{保留双面渲染与阴影}
 
-本次修复特别保留了 \mintinline{text}|Cull Off|。森林场景中大量草片和树叶是薄片模型，如果启用背面剔除，用户在 VR 中从背面观察时会看到植被消失。对于可自由转头和移动的 VR 场景而言，双面渲染比普通静态截图更加重要。
+本次修复特别保留了 \cmd{Cull Off}。森林场景中大量草片和树叶是薄片模型，如果启用背面剔除，用户在 VR 中从背面观察时会看到植被消失。对于可自由转头和移动的 VR 场景而言，双面渲染比普通静态截图更加重要。
 
-此外，修复后的 Shader 增加了 \mintinline{text}|ShadowCaster| pass，并在阴影通道中使用与主渲染通道一致的 alpha 裁剪逻辑。这样可以让带透明区域的草和树叶按照贴图轮廓参与阴影计算，避免出现物体可见但阴影缺失、或者阴影轮廓异常的问题。透明裁剪依据贴图 alpha 而不是 \mintinline{text}|_Color.a|，是因为原资源中部分树叶材质的颜色 alpha 可能为 0，如果直接依据颜色 alpha 裁剪，会导致树叶被错误裁掉。
+此外，修复后的 Shader 增加了 \cmd{ShadowCaster} pass，并在阴影通道中使用与主渲染通道一致的 alpha 裁剪逻辑。这样可以让带透明区域的草和树叶按照贴图轮廓参与阴影计算，避免出现物体可见但阴影缺失、或者阴影轮廓异常的问题。透明裁剪依据贴图 alpha 而不是 \cmd{_Color.a}，是因为原资源中部分树叶材质的颜色 alpha 可能为 0，如果直接依据颜色 alpha 裁剪，会导致树叶被错误裁掉。
 
-完成 Shader 修改后，还需要将部分材质统一改为引用 \mintinline{text}|Fantasy Forest/StandardNoCulling|。本次调整的材质包括 \mintinline{text}|dirt01.mat|、\mintinline{text}|grass01.mat| 和 \mintinline{text}|bark01_bottom.mat|；原本已经引用该 Shader 的 \mintinline{text}|grassmesh.mat| 和 \mintinline{text}|tree_branches.mat| 会自动使用新的 URP 兼容实现。修复完成后的场景显示效果如图 \ref{fig:unity_forest_fixed} 所示。
+完成 Shader 修改后，还需要将部分材质统一改为引用 \cmd{Fantasy Forest/StandardNoCulling}。本次调整的材质包括 \cmd{dirt01.mat}、\cmd{grass01.mat} 和 \cmd{bark01_bottom.mat}；原本已经引用该 Shader 的 \cmd{grassmesh.mat} 和 \cmd{tree_branches.mat} 会自动使用新的 URP 兼容实现。修复完成后的场景显示效果如图 \ref{fig:unity_forest_fixed} 所示。
 
 \begin{figure}[htbp]
   \centering
@@ -116,7 +116,7 @@
 Assets/VRTemplateAssets/Prefabs/Setup/Complete XR Origin Set Up Hands Variant.prefab
 \end{minted}
 
-这样做的原因是，VR 视角并不等同于一个摄像机。完整的 XR Origin 包含 \mintinline{text}|Main Camera|、\mintinline{text}|Camera Offset|、手部控制器、输入动作、交互组件和移动组件。如果只复制单独的 Camera，用户也许能够看到画面，但无法保留 VR 模板中已经配置好的手部、控制器和移动逻辑。
+这样做的原因是，VR 视角并不等同于一个摄像机。完整的 XR Origin 包含 \cmd{Main Camera}、\cmd{Camera Offset}、手部控制器、输入动作、交互组件和移动组件。如果只复制单独的 Camera，用户也许能够看到画面，但无法保留 VR 模板中已经配置好的手部、控制器和移动逻辑。
 
 \begin{figure}[htbp]
   \centering
@@ -125,9 +125,9 @@ Assets/VRTemplateAssets/Prefabs/Setup/Complete XR Origin Set Up Hands Variant.pr
   \label{fig:unity_copy_xr_origin}
 \end{figure}
 
-复制完成后，森林场景中新增 \mintinline{text}|XR Origin Hands (XR Rig)|。其位置参考原普通相机设置为 X = \mintinline{text}|17.5541019|、Y = \mintinline{text}|0|、Z = \mintinline{text}|28.302784|，Y 轴旋转设置为 \mintinline{text}|350.638153|。这样进入 VR 场景后，用户的初始视角能够面向森林主体区域。同时，原森林场景中的普通 \mintinline{text}|Camera| 被设置为 inactive，避免它与 XR Rig 内部的 \mintinline{text}|Main Camera| 同时渲染或产生 Audio Listener 冲突。
+复制完成后，森林场景中新增 \cmd{XR Origin Hands (XR Rig)}。其位置参考原普通相机设置为 X = \cmd{17.5541019}、Y = \cmd{0}、Z = \cmd{28.302784}，Y 轴旋转设置为 \cmd{350.638153}。这样进入 VR 场景后，用户的初始视角能够面向森林主体区域。同时，原森林场景中的普通 \cmd{Camera} 被设置为 inactive，避免它与 XR Rig 内部的 \cmd{Main Camera} 同时渲染或产生 Audio Listener 冲突。
 
-但是由于我没有 VR 设备，所以无法在编辑器中直接测试 VR 视角的实际效果。为了验证 XR Origin 的正确接入，我检查了其内部组件结构，确认包含 \mintinline{text}|Main Camera|、\mintinline{text}|Camera Offset|、左右手控制器、输入动作和移动组件等必要元素。同时，我也检查了场景中的地形碰撞体，确保用户在 VR 中能够与地面进行物理交互。虽然无法直接测试 VR 视角，但通过上述检查可以基本确认 XR Origin 已经正确接入森林场景，并且具备了 VR 模板中预设的功能结构。
+但是由于我没有 VR 设备，所以无法在编辑器中直接测试 VR 视角的实际效果。为了验证 XR Origin 的正确接入，我检查了其内部组件结构，确认包含 \cmd{Main Camera}、\cmd{Camera Offset}、左右手控制器、输入动作和移动组件等必要元素。同时，我也检查了场景中的地形碰撞体，确保用户在 VR 中能够与地面进行物理交互。虽然无法直接测试 VR 视角，但通过上述检查可以基本确认 XR Origin 已经正确接入森林场景，并且具备了 VR 模板中预设的功能结构。
 
 \subsubsection{移动系统依赖关系}
 
@@ -142,9 +142,9 @@ XR Controller Input
                     -> XR Origin movement
 \end{minted}
 
-其中，\mintinline{text}|XRI Default Input Actions.inputactions| 定义控制器上的移动、转向、传送和 UI 滚动输入；\mintinline{text}|ControllerInputActionManager.cs| 负责根据当前交互状态启用或禁用不同输入动作；\mintinline{text}|DynamicMoveProvider.cs| 继承自 \mintinline{text}|ContinuousMoveProvider|，用于根据头显或手柄方向计算连续移动的参考方向。关键代码已整理到 \mintinline{text}|code/chapter3/|，并在附录“Unity VR 移动系统关键代码”中引用。
+其中，\cmd{XRI Default Input Actions.inputactions} 定义控制器上的移动、转向、传送和 UI 滚动输入；\cmd{ControllerInputActionManager.cs} 负责根据当前交互状态启用或禁用不同输入动作；\cmd{DynamicMoveProvider.cs} 继承自 \cmd{ContinuousMoveProvider}，用于根据头显或手柄方向计算连续移动的参考方向。关键代码已整理到 \cmd{code/chapter3/}，并在附录“Unity VR 移动系统关键代码”中引用。
 
-从功能上看，移动系统主要解决两个问题。第一，连续移动和传送模式不能同时抢占控制器输入。当启用连续移动时，脚本启用 \mintinline{text}|Move| 输入并禁用传送相关输入；当关闭连续移动时，脚本启用 \mintinline{text}|Teleport Mode| 和 \mintinline{text}|Teleport Mode Cancel|，使用户可以通过传送射线移动。第二，连续移动的方向需要符合 VR 用户的空间感知。移动方向可以相对于头显，也可以相对于手柄，\mintinline{text}|DynamicMoveProvider| 会根据左右手输入强度混合两个参考姿态，再交给 XR Interaction Toolkit 的基础移动逻辑计算实际位移。
+从功能上看，移动系统主要解决两个问题。第一，连续移动和传送模式不能同时抢占控制器输入。当启用连续移动时，脚本启用 \cmd{Move} 输入并禁用传送相关输入；当关闭连续移动时，脚本启用 \cmd{Teleport Mode} 和 \cmd{Teleport Mode Cancel}，使用户可以通过传送射线移动。第二，连续移动的方向需要符合 VR 用户的空间感知。移动方向可以相对于头显，也可以相对于手柄，\cmd{DynamicMoveProvider} 会根据左右手输入强度混合两个参考姿态，再交给 XR Interaction Toolkit 的基础移动逻辑计算实际位移。
 
 通过上述配置，森林场景不仅能够“看见”，也能够通过 VR 视角“进入”，并进一步支持连续移动和传送移动。这使场景从静态展示资源转变为具有基本漫游能力的 VR 环境。
 
@@ -168,7 +168,7 @@ XR Controller Input
   \label{fig:unity_import_other_resource}
 \end{figure}
 
-本次额外下载的资源中，\mintinline{text}|PolyRonin/Pine Forest Pack| 与主体森林场景风格较为一致，因此被选为第二个实际使用的资源包。该资源包包含松林相关的树木、石块、植被和花卉等预制体。图 \ref{fig:unity_pine_demo} 展示了该资源包的示例效果，图 \ref{fig:unity_pine_prefab_1} 和图 \ref{fig:unity_pine_prefab_2} 展示了资源包中的部分预制体。
+本次额外下载的资源中，\cmd{PolyRonin/Pine Forest Pack} 与主体森林场景风格较为一致，因此被选为第二个实际使用的资源包。该资源包包含松林相关的树木、石块、植被和花卉等预制体。图 \ref{fig:unity_pine_demo} 展示了该资源包的示例效果，图 \ref{fig:unity_pine_prefab_1} 和图 \ref{fig:unity_pine_prefab_2} 展示了资源包中的部分预制体。
 
 \begin{figure}[htbp]
   \centering
@@ -191,11 +191,11 @@ XR Controller Input
   \label{fig:unity_pine_prefab_2}
 \end{figure}
 
-另一个资源包 \mintinline{text}|Cosmic_Retro_RecreationRoom_FREE| 也已下载，但其内容更偏向复古室内娱乐空间，与当前森林场景的自然环境主题差异较大。如果强行加入，容易破坏场景风格统一性。因此，本实验只记录其评估过程，没有将其中资源加入最终森林场景。
+另一个资源包 \cmd{Cosmic_Retro_RecreationRoom_FREE} 也已下载，但其内容更偏向复古室内娱乐空间，与当前森林场景的自然环境主题差异较大。如果强行加入，容易破坏场景风格统一性。因此，本实验只记录其评估过程，没有将其中资源加入最终森林场景。
 
 \subsubsection{添加花卉预制体}
 
-在具体装饰过程中，本实验以 \mintinline{text}|Fantasy Forest Environment Free Sample| 的场景为主体，只从 \mintinline{text}|PolyRonin/Pine Forest Pack| 中选取花卉预制体进行补充。Pine Forest Pack 中三种类型的花卉均被加入场景，用于丰富地面层次和局部视觉细节。这样处理的好处是既能保留主体森林场景的整体风格，又能避免导入过多异质资源导致场景显得杂乱。
+在具体装饰过程中，本实验以 \cmd{Fantasy Forest Environment Free Sample} 的场景为主体，只从 \cmd{PolyRonin/Pine Forest Pack} 中选取花卉预制体进行补充。Pine Forest Pack 中三种类型的花卉均被加入场景，用于丰富地面层次和局部视觉细节。这样处理的好处是既能保留主体森林场景的整体风格，又能避免导入过多异质资源导致场景显得杂乱。
 
 \begin{figure}[htbp]
   \centering
@@ -225,7 +225,7 @@ XR Controller Input
 
 在完成森林环境、VR 视角和花卉装饰之后，场景已经具备了较完整的自然环境基础。但如果场景中只有树木、草地和花卉，整体仍然偏向静态展示，缺少森林中应有的生命感和叙事性。因此，本实验进一步导入角色类资源包，重点选取其中的动物模型作为场景补充，使用户在 VR 漫游时能够看到更丰富的生态元素。
 
-本次选择的资源包为 \mintinline{text}|Animals FREE - Animated Low Poly 3D Models|，如图 \ref{fig:unity_animal_asset_store} 所示。该资源包采用低多边形美术风格，包含多种动物预制体，整体造型简洁、颜色明快，与前面搭建的低多边形森林环境和花卉资源较为协调。相比写实动物模型，低多边形动物在视觉上不会与当前森林资源产生明显风格冲突，同时模型复杂度相对较低，更适合课程实验中的 VR 场景展示。
+本次选择的资源包为 \cmd{Animals FREE - Animated Low Poly 3D Models}，如图 \ref{fig:unity_animal_asset_store} 所示。该资源包采用低多边形美术风格，包含多种动物预制体，整体造型简洁、颜色明快，与前面搭建的低多边形森林环境和花卉资源较为协调。相比写实动物模型，低多边形动物在视觉上不会与当前森林资源产生明显风格冲突，同时模型复杂度相对较低，更适合课程实验中的 VR 场景展示。
 
 \begin{figure}[H]
     \centering
@@ -234,9 +234,9 @@ XR Controller Input
     \label{fig:unity_animal_asset_store}
 \end{figure}
 
-资源添加到 Unity 账户后，需要在 Unity 的包管理器中找到该资源，并执行下载和导入操作。图 \ref{fig:unity_import_animal_asset} 展示了资源包导入界面。可以看到，该资源包中包含 \mintinline{text}|Prefabs|、\mintinline{text}|Materials|、\mintinline{text}|Meshes|、\mintinline{text}|Textures|、\mintinline{text}|Animations| 等目录，同时还提供了面向不同渲染管线的转换资源。由于当前项目使用 Unity 6 和 URP，导入时保留了 URP 相关资源，避免动物模型在场景中出现材质丢失或粉色显示的问题。
+资源添加到 Unity 账户后，需要在 Unity 的包管理器中找到该资源，并执行下载和导入操作。图 \ref{fig:unity_import_animal_asset} 展示了资源包导入界面。可以看到，该资源包中包含 \cmd{Prefabs}、\cmd{Materials}、\cmd{Meshes}、\cmd{Textures}、\cmd{Animations} 等目录，同时还提供了面向不同渲染管线的转换资源。由于当前项目使用 Unity 6 和 URP，导入时保留了 URP 相关资源，避免动物模型在场景中出现材质丢失或粉色显示的问题。
 
-导入该资源包的目的并不是替换原有森林场景，而是在原有场景基础上增加可观察的动物角色。因此，本实验没有打开资源包自带的示例场景作为主体，而是只导入所需资源，并继续在原 \mintinline{text}|demoScene_free| 森林场景中进行布置。这样可以保证场景主体、VR 出生点、移动逻辑和前面已经修复的森林材质都保持不变。
+导入该资源包的目的并不是替换原有森林场景，而是在原有场景基础上增加可观察的动物角色。因此，本实验没有打开资源包自带的示例场景作为主体，而是只导入所需资源，并继续在原 \cmd{demoScene_free} 森林场景中进行布置。这样可以保证场景主体、VR 出生点、移动逻辑和前面已经修复的森林材质都保持不变。
 
 \begin{figure}[H]
     \centering
@@ -248,7 +248,7 @@ XR Controller Input
 
 \subsubsection{添加预制体}
 
-资源包导入完成后，在项目资源目录中可以看到多个动物预制体，例如 \mintinline{text}|Deer_001|、\mintinline{text}|Kitty_001|、\mintinline{text}|Dog_001| 和 \mintinline{text}|Tiger_001| 等。本实验将这些动物预制体拖入森林场景，并根据场景地形、树木遮挡和用户初始视角进行位置调整。图 \ref{fig:unity_add_forest_animals} 展示了动物模型加入后的场景效果。
+资源包导入完成后，在项目资源目录中可以看到多个动物预制体，例如 \cmd{Deer_001}、\cmd{Kitty_001}、\cmd{Dog_001} 和 \cmd{Tiger_001} 等。本实验将这些动物预制体拖入森林场景，并根据场景地形、树木遮挡和用户初始视角进行位置调整。图 \ref{fig:unity_add_forest_animals} 展示了动物模型加入后的场景效果。
 
 在布置动物预制体时，需要注意三个方面。第一，动物模型应放置在用户进入 VR 后能够较快观察到的位置，避免被树木、灌木或高草完全遮挡。第二，动物之间需要保持一定间距，使场景看起来像自然分布，而不是简单堆叠在同一位置。第三，动物朝向需要与道路、树木和用户视线方向相配合，使其更像是在森林中停留或活动，而不是孤立摆放的模型。
 
@@ -276,7 +276,7 @@ XR Controller Input
     \label{fig:unity_enter_build_profiles}
 \end{figure}
 
-进入构建界面后，需要确认当前森林场景已经加入场景列表。由于项目中仍然保留了 VR 模板自带的 \mintinline{text}|SampleScene|，如果不调整场景列表，打包后可能启动到默认模板场景，而不是本章构建的森林场景。因此，本实验将 \mintinline{text}|Fantasy Forest Environment Free Sample/Scenes/demoScene_free| 添加并勾选为构建场景，如图~\ref{fig:unity_add_scene_to_build} 所示。这样生成的应用程序启动后会直接加载森林 VR 场景。
+进入构建界面后，需要确认当前森林场景已经加入场景列表。由于项目中仍然保留了 VR 模板自带的 \cmd{SampleScene}，如果不调整场景列表，打包后可能启动到默认模板场景，而不是本章构建的森林场景。因此，本实验将 \cmd{Fantasy Forest Environment Free Sample/Scenes/demoScene_free} 添加并勾选为构建场景，如图~\ref{fig:unity_add_scene_to_build} 所示。这样生成的应用程序启动后会直接加载森林 VR 场景。
 
 \begin{figure}[H]
     \centering
@@ -285,7 +285,7 @@ XR Controller Input
     \label{fig:unity_add_scene_to_build}
 \end{figure}
 
-随后检查构建平台和基本参数。本次目标平台选择 Windows，架构选择 \mintinline{text}|Intel 64-bit|，运行为本地计算机，如图~\ref{fig:unity_confirm_build_settings} 所示。选择 Windows 平台的原因是实验环境本身在 Windows 下完成，打包后可以直接在本机运行并验证画面效果。确认场景列表和平台参数无误后，点击“生成”按钮开始选择输出目录。
+随后检查构建平台和基本参数。本次目标平台选择 Windows，架构选择 \cmd{Intel 64-bit}，运行为本地计算机，如图~\ref{fig:unity_confirm_build_settings} 所示。选择 Windows 平台的原因是实验环境本身在 Windows 下完成，打包后可以直接在本机运行并验证画面效果。确认场景列表和平台参数无误后，点击“生成”按钮开始选择输出目录。
 
 \begin{figure}[H]
     \centering
@@ -294,7 +294,7 @@ XR Controller Input
     \label{fig:unity_confirm_build_settings}
 \end{figure}
 
-为了让构建产物和 Unity 工程源文件分开管理，本实验在当前项目目录下新建 \mintinline{text}|Build| 文件夹作为输出目录，如图~\ref{fig:unity_create_build_folder} 所示。这样可以避免生成的可执行文件、数据目录和运行时依赖文件散落在工程根目录中，也便于后续查找、复制或清理构建结果。
+为了让构建产物和 Unity 工程源文件分开管理，本实验在当前项目目录下新建 \cmd{Build} 文件夹作为输出目录，如图~\ref{fig:unity_create_build_folder} 所示。这样可以避免生成的可执行文件、数据目录和运行时依赖文件散落在工程根目录中，也便于后续查找、复制或清理构建结果。
 
 \begin{figure}[H]
     \centering
@@ -303,7 +303,7 @@ XR Controller Input
     \label{fig:unity_create_build_folder}
 \end{figure}
 
-构建完成后，\mintinline{text}|Build| 目录中生成了 \mintinline{text}|VR_L.exe|、\mintinline{text}|VR_L_Data|、\mintinline{text}|UnityPlayer.dll|、\mintinline{text}|GameAssembly.dll| 等运行所需文件，如图~\ref{fig:unity_build_finished} 所示。其中，\mintinline{text}|VR_L.exe| 是最终可执行程序，\mintinline{text}|VR_L_Data| 保存场景、资源和运行时数据，其他动态链接库则是 Unity 应用运行所需的引擎和脚本依赖。由此可以确认，Unity 已经成功完成 Windows 平台构建。
+构建完成后，\cmd{Build} 目录中生成了 \cmd{VR_L.exe}、\cmd{VR_L_Data}、\cmd{UnityPlayer.dll}、\cmd{GameAssembly.dll} 等运行所需文件，如图~\ref{fig:unity_build_finished} 所示。其中，\cmd{VR_L.exe} 是最终可执行程序，\cmd{VR_L_Data} 保存场景、资源和运行时数据，其他动态链接库则是 Unity 应用运行所需的引擎和脚本依赖。由此可以确认，Unity 已经成功完成 Windows 平台构建。
 
 \begin{figure}[H]
     \centering
@@ -332,6 +332,6 @@ XR Controller Input
 
 \subsection{运行展示与本章小结}
 
-完成 Shader 修复、XR Origin 接入、移动系统配置、花卉装饰、动物预制体添加和 Windows 平台打包后，最终场景已经具备基本的 VR 展示能力。运行结果表明，森林场景中的地形、树木、草地、树叶、新增花卉和动物模型能够正常显示，不再出现大面积粉色材质；场景中存在完整的 \mintinline{text}|XR Origin Hands (XR Rig)|，其内部包含主相机、手部控制器、输入动作和移动组件；原普通 Camera 已关闭，避免与 VR 相机冲突；场景地形带有碰撞体，能够为 VR 移动和重力检测提供基础；打包后的 Windows 可执行程序也能够正常启动并进入森林场景。
+完成 Shader 修复、XR Origin 接入、移动系统配置、花卉装饰、动物预制体添加和 Windows 平台打包后，最终场景已经具备基本的 VR 展示能力。运行结果表明，森林场景中的地形、树木、草地、树叶、新增花卉和动物模型能够正常显示，不再出现大面积粉色材质；场景中存在完整的 \cmd{XR Origin Hands (XR Rig)}，其内部包含主相机、手部控制器、输入动作和移动组件；原普通 Camera 已关闭，避免与 VR 相机冲突；场景地形带有碰撞体，能够为 VR 移动和重力检测提供基础；打包后的 Windows 可执行程序也能够正常启动并进入森林场景。
 
 本章实验说明，VR 场景构建并不是单纯把资源拖入 Unity。旧资源包迁移到新版本 Unity 和 URP 项目时，需要先判断项目版本和渲染管线，再根据 Shader 兼容性进行修复；接入 VR 时，也不能只复制摄像机，而应保留 XR Origin、输入动作和移动组件的完整结构；在场景美化阶段，还需要注意资源风格统一，选择与主体森林环境一致的预制体进行补充；在最终交付阶段，还需要通过构建设置确认启动场景、目标平台和输出目录。通过这些步骤，本实验最终完成了一个以森林为主题、可显示、可进入、可移动、可打包运行，并具有花卉装饰和动物生态元素的 Unity VR 场景。

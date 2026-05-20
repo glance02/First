@@ -2,13 +2,13 @@
 
 \subsection{实验定位与内容概述}
 
-本章分析的是一个基于 \mintinline{text}|face-api.js| 的浏览器端人脸分析开源项目。该项目代码托管在 \mintinline{text}|git@github.com:glance02/face-recognition.git|，是在 \mintinline{text}|willtrinh/face-recognition.git| 项目基础上 fork 并修改得到的实验版本。项目以 HTML、CSS 和 JavaScript 静态资源为主体，通过 \mintinline{text}|face-api.js|\cite{faceapi} 在浏览器中加载预训练模型，并在本地完成图片表情识别、图片年龄与性别估计以及摄像头实时人脸追踪。它的重点不是训练新的神经网络，而是观察一个已经训练好的模型体系如何被前端页面组织、加载、调用和展示。
+本章分析的是一个基于 \cmd{face-api.js} 的浏览器端人脸分析开源项目。该项目代码托管在 \cmd{git@github.com:glance02/face-recognition.git}，是在 \cmd{willtrinh/face-recognition.git} 项目基础上 fork 并修改得到的实验版本。项目以 HTML、CSS 和 JavaScript 静态资源为主体，通过 \cmd{face-api.js}\cite{faceapi} 在浏览器中加载预训练模型，并在本地完成图片表情识别、图片年龄与性别估计以及摄像头实时人脸追踪。它的重点不是训练新的神经网络，而是观察一个已经训练好的模型体系如何被前端页面组织、加载、调用和展示。
 
-页面中的 \mintinline{text}|models/| 目录保存了实验所需的预训练权重，\mintinline{text}|public/| 目录提供示例图片、人物参考图片和演示视频等资源。运行时，浏览器脚本先加载模型文件，再把用户上传的图片或摄像头视频帧送入模型，最后将检测框、关键点、表情类别、年龄和性别估计等结果绘制到页面上。整个过程体现了前端页面如何把输入采集、模型推理和结果可视化连接成一个完整的人脸分析流程。
+页面中的 \cmd{models/} 目录保存了实验所需的预训练权重，\cmd{public/} 目录提供示例图片、人物参考图片和演示视频等资源。运行时，浏览器脚本先加载模型文件，再把用户上传的图片或摄像头视频帧送入模型，最后将检测框、关键点、表情类别、年龄和性别估计等结果绘制到页面上。整个过程体现了前端页面如何把输入采集、模型推理和结果可视化连接成一个完整的人脸分析流程。
 
 人脸分析是计算机视觉在人机交互、身份认证、内容理解和智能终端中的典型任务。传统系统常把模型部署在服务器端，客户端只负责采集图像、上传数据和显示结果。这种方式便于集中管理模型，但会带来网络依赖、数据传输、服务部署和延迟控制等问题。随着 TensorFlow.js 等前端推理框架的发展，浏览器不仅能显示页面，也能成为模型推理运行环境。对于课程实验而言，这种部署方式具有明显优势：运行入口直观、依赖环境轻、实验过程容易展示，也便于在报告中把“页面结构”和“识别流程”对应起来分析。
 
-本实验选择三个页面作为观察对象：\mintinline{text}|face_expression_recognition.html| 用于图片表情识别，\mintinline{text}|age_gender_estimation.html| 用于年龄与性别估计，\mintinline{text}|webcam_face_tracking.html| 用于摄像头实时追踪。三个页面共享同一个模型目录和前端资源目录，但各自加载不同业务脚本。通过对它们进行对比，可以看出浏览器端人脸分析系统的一般流程：先加载模型，再取得输入，再执行模型推理，最后把检测框、关键点、表情或属性结果渲染到界面上。
+本实验选择三个页面作为观察对象：\cmd{face_expression_recognition.html} 用于图片表情识别，\cmd{age_gender_estimation.html} 用于年龄与性别估计，\cmd{webcam_face_tracking.html} 用于摄像头实时追踪。三个页面共享同一个模型目录和前端资源目录，但各自加载不同业务脚本。通过对它们进行对比，可以看出浏览器端人脸分析系统的一般流程：先加载模型，再取得输入，再执行模型推理，最后把检测框、关键点、表情或属性结果渲染到界面上。
 
 本章的实验目标包括四个方面。第一，梳理静态网页项目中页面、样式、脚本、模型权重和示例资源之间的组织关系；第二，分析图片输入与摄像头视频流输入在前端实现上的差异；第三，分别说明表情识别、年龄性别估计和实时追踪三个功能模块的实现逻辑；第四，总结浏览器端推理在性能、稳定性、隐私和实验复现方面的优点与局限。
 
@@ -16,9 +16,9 @@
 
 \subsubsection{静态项目结构}
 
-该项目没有后端服务，也没有复杂的构建入口。页面入口直接位于项目根目录，业务脚本位于 \mintinline{text}|dist/|，模型文件位于 \mintinline{text}|models/|，示例图片、人物注册图片和演示视频位于 \mintinline{text}|public/|。从实验复现角度看，这种结构的好处是入口清晰：只要浏览器能够访问静态文件，就可以加载页面并触发识别逻辑；对于摄像头页面，还需要浏览器允许页面访问本机摄像头。
+该项目没有后端服务，也没有复杂的构建入口。页面入口直接位于项目根目录，业务脚本位于 \cmd{dist/}，模型文件位于 \cmd{models/}，示例图片、人物注册图片和演示视频位于 \cmd{public/}。从实验复现角度看，这种结构的好处是入口清晰：只要浏览器能够访问静态文件，就可以加载页面并触发识别逻辑；对于摄像头页面，还需要浏览器允许页面访问本机摄像头。
 
-项目中的核心库文件是 \mintinline{text}|dist/face-api.min.js|。它是 \mintinline{text}|face-api.js| 的浏览器端构建文件，向页面暴露全局对象 \mintinline{javascript}|faceapi|。三个实验页面并不直接实现底层神经网络，而是调用这个对象提供的高层接口，例如模型加载接口、检测接口、关键点接口、表情接口和绘图接口。业务脚本则负责把这些接口连接成完整实验流程。
+项目中的核心库文件是 \cmd{dist/face-api.min.js}。它是 \cmd{face-api.js} 的浏览器端构建文件，向页面暴露全局对象 \cmd{faceapi}。三个实验页面并不直接实现底层神经网络，而是调用这个对象提供的高层接口，例如模型加载接口、检测接口、关键点接口、表情接口和绘图接口。业务脚本则负责把这些接口连接成完整实验流程。
 
 页面、脚本和功能之间的对应关系如表 \ref{tab:face_pages} 所示。
 
@@ -67,17 +67,17 @@
 
 \subsubsection{模型权重与本地加载}
 
-\mintinline{text}|models/| 目录中保存了多个预训练模型权重，包括 Tiny Face Detector、SSD MobileNetV1、68 点人脸关键点模型、表情识别模型、年龄性别估计模型和人脸识别模型等。业务脚本中的 \mintinline{javascript}|MODEL_URL| 均设置为 \mintinline{javascript}|"./models"|，说明当前实验版本从本地目录加载模型，而不是依赖远程 CDN 或 GitHub Raw URL。
+\cmd{models/} 目录中保存了多个预训练模型权重，包括 Tiny Face Detector、SSD MobileNetV1、68 点人脸关键点模型、表情识别模型、年龄性别估计模型和人脸识别模型等。业务脚本中的 \cmd{MODEL_URL} 均设置为 \cmd{"./models"}，说明当前实验版本从本地目录加载模型，而不是依赖远程 CDN 或 GitHub Raw URL。
 
 本地模型加载对课程报告很重要。首先，它减少了外部网络波动对实验复现的影响。其次，它使报告中的路径说明与实际项目文件保持一致，读者可以直接在仓库中找到模型、脚本和示例资源。最后，本地加载也更容易观察模型文件数量和页面请求过程，有助于理解前端深度学习应用并不是只有一个 HTML 页面，而是由页面、模型权重、脚本和媒体资源共同组成。
 
-需要注意的是，本地保存权重不等于本地训练模型。浏览器页面运行时只通过 \mintinline{javascript}|loadFromUri| 把权重读入内存，然后执行前向推理。无论用户上传多少图片，模型参数都不会被更新。这个边界决定了本章的分析口径：页面展示的是“如何使用模型”，不是“如何训练模型”。
+需要注意的是，本地保存权重不等于本地训练模型。浏览器页面运行时只通过 \cmd{loadFromUri} 把权重读入内存，然后执行前向推理。无论用户上传多少图片，模型参数都不会被更新。这个边界决定了本章的分析口径：页面展示的是“如何使用模型”，不是“如何训练模型”。
 
 \subsubsection{页面布局与显示容器}
 
 三个页面采用相似的界面组织方式：顶部为导航区域，中间主体为左右分栏。左侧通常放置文件上传控件、摄像头状态、识别结果卡片和空状态提示；右侧放置图片或视频展示区域，并在媒体元素上叠加 Canvas 画布。这样的布局适合实验观察，因为图像标注和结构化结果可以并排出现。用户既能看到检测框是否对准人脸，也能读取模型输出的表情概率、年龄估计、性别置信度等信息。
 
-从职责分工看，HTML 负责定义页面结构，CSS 负责布局和视觉样式，JavaScript 负责模型加载、输入处理、推理调用和结果渲染。页面本身不包含复杂算法，算法能力主要来自 \mintinline{text}|face-api.js| 和预训练模型。业务脚本则处在连接层：它把 DOM 输入转成模型可处理的媒体对象，把模型输出转成 Canvas 标注和结果卡片。
+从职责分工看，HTML 负责定义页面结构，CSS 负责布局和视觉样式，JavaScript 负责模型加载、输入处理、推理调用和结果渲染。页面本身不包含复杂算法，算法能力主要来自 \cmd{face-api.js} 和预训练模型。业务脚本则处在连接层：它把 DOM 输入转成模型可处理的媒体对象，把模型输出转成 Canvas 标注和结果卡片。
 
 \begin{figure}[htbp]
   \centering
@@ -90,33 +90,33 @@
 
 \subsubsection{defer 脚本顺序}
 
-三个页面都在 \mintinline{html}|head| 中先引入样式文件，再使用 \mintinline{html}|defer| 引入脚本。脚本顺序保持为先加载 \mintinline{text}|dist/face-api.min.js|，再加载当前页面对应的业务脚本。这一顺序是稳定运行的前提，因为业务脚本会直接访问全局对象 \mintinline{javascript}|faceapi|。如果业务脚本先执行，就会出现 \mintinline{javascript}|faceapi is not defined| 之类的错误。
+三个页面都在 \cmd{head} 中先引入样式文件，再使用 \cmd{defer} 引入脚本。脚本顺序保持为先加载 \cmd{dist/face-api.min.js}，再加载当前页面对应的业务脚本。这一顺序是稳定运行的前提，因为业务脚本会直接访问全局对象 \cmd{faceapi}。如果业务脚本先执行，就会出现 \cmd{faceapi is not defined} 之类的错误。
 
-\mintinline{html}|defer| 的作用是让浏览器在解析 HTML 时并行下载脚本，但等到文档结构解析完成后再按页面中的顺序执行。这样，业务脚本执行时既能访问已经加载好的 \mintinline{javascript}|faceapi| 对象，也能通过 \mintinline{javascript}|document.getElementById| 找到上传控件、结果容器和视频元素。对于静态实验页面来说，这是一种简洁稳定的初始化方式，不需要额外把所有逻辑包在复杂的 DOM ready 回调中。
+\cmd{defer} 的作用是让浏览器在解析 HTML 时并行下载脚本，但等到文档结构解析完成后再按页面中的顺序执行。这样，业务脚本执行时既能访问已经加载好的 \cmd{faceapi} 对象，也能通过 \cmd{document.getElementById} 找到上传控件、结果容器和视频元素。对于静态实验页面来说，这是一种简洁稳定的初始化方式，不需要额外把所有逻辑包在复杂的 DOM ready 回调中。
 
-页面底部还可能引入 jQuery、Popper、Bootstrap 和 MDB 等脚本。这些库主要承担界面组件和样式交互职责，不直接参与模型推理。实验的核心识别链路由 \mintinline{text}|face-api.js| 与三个业务脚本完成，其他前端库只改善页面展示体验。
+页面底部还可能引入 jQuery、Popper、Bootstrap 和 MDB 等脚本。这些库主要承担界面组件和样式交互职责，不直接参与模型推理。实验的核心识别链路由 \cmd{face-api.js} 与三个业务脚本完成，其他前端库只改善页面展示体验。
 
 \subsubsection{模型加载的并行等待}
 
-业务脚本使用 \mintinline{javascript}|Promise.all| 并行加载所需模型。表情识别脚本加载 Tiny Face Detector、68 点关键点、人脸识别、表情识别和 SSD MobileNetV1；年龄性别估计脚本加载 Tiny Face Detector、68 点关键点、人脸识别、年龄性别估计和 SSD MobileNetV1；摄像头脚本加载 Tiny Face Detector、68 点关键点、人脸识别和表情识别模型。只有当这些 Promise 全部完成后，脚本才进入后续的 \mintinline{javascript}|start| 或 \mintinline{javascript}|startVideo| 流程。
+业务脚本使用 \cmd{Promise.all} 并行加载所需模型。表情识别脚本加载 Tiny Face Detector、68 点关键点、人脸识别、表情识别和 SSD MobileNetV1；年龄性别估计脚本加载 Tiny Face Detector、68 点关键点、人脸识别、年龄性别估计和 SSD MobileNetV1；摄像头脚本加载 Tiny Face Detector、68 点关键点、人脸识别和表情识别模型。只有当这些 Promise 全部完成后，脚本才进入后续的 \cmd{start} 或 \cmd{startVideo} 流程。
 
 这种写法体现了前端模型应用的一个基本原则：在用户交互之前先确保模型可用。否则用户可能已经上传图片，但模型权重还没有加载完成，页面就会进入不确定状态。脚本通过等待模型加载完成后再注册上传监听器或请求摄像头，避免了“输入已经到达但模型尚未准备好”的竞态问题。
 
-不同页面加载的模型略有冗余。例如图片页面加载了 \mintinline{javascript}|faceRecognitionNet|，但当前展示重点不一定使用身份匹配结果。这种设计可能是为了复用脚本模板或保留扩展空间。就实验报告而言，可以把它理解为典型的人脸分析流水线：检测模型先找到人脸，关键点模型定位面部结构，描述子模型提取特征，属性模型输出表情、年龄或性别。
+不同页面加载的模型略有冗余。例如图片页面加载了 \cmd{faceRecognitionNet}，但当前展示重点不一定使用身份匹配结果。这种设计可能是为了复用脚本模板或保留扩展空间。就实验报告而言，可以把它理解为典型的人脸分析流水线：检测模型先找到人脸，关键点模型定位面部结构，描述子模型提取特征，属性模型输出表情、年龄或性别。
 
 \subsection{图片输入处理流程}
 
 \subsubsection{从本地文件到图像对象}
 
-图片类页面通过 \mintinline{text}|input[type=file]| 接收用户上传的 JPG、PNG 等常见图片格式。业务脚本监听上传控件的 \mintinline{javascript}|change| 事件。如果用户没有选择文件，脚本直接返回；如果存在文件，页面先渲染“正在识别”的空状态提示，然后清除上一张图片和上一张画布，避免旧结果与新结果叠在一起。
+图片类页面通过 \cmd{input[type=file]} 接收用户上传的 JPG、PNG 等常见图片格式。业务脚本监听上传控件的 \cmd{change} 事件。如果用户没有选择文件，脚本直接返回；如果存在文件，页面先渲染“正在识别”的空状态提示，然后清除上一张图片和上一张画布，避免旧结果与新结果叠在一起。
 
-上传文件并不能直接送入模型。脚本调用 \mintinline{javascript}|faceapi.bufferToImage(imageUpload.files[0])|，将本地文件转换为浏览器中的图片对象，再把图片插入展示容器。随后，脚本调用 \mintinline{javascript}|faceapi.createCanvasFromMedia(image)| 创建覆盖画布，使模型标注能够叠加在图片上。这里的 Canvas 是结果可视化的关键：检测框、表情标签、年龄性别标签都不是写在原图上，而是画在覆盖层中。
+上传文件并不能直接送入模型。脚本调用 \cmd{faceapi.bufferToImage(imageUpload.files[0])}，将本地文件转换为浏览器中的图片对象，再把图片插入展示容器。随后，脚本调用 \cmd{faceapi.createCanvasFromMedia(image)} 创建覆盖画布，使模型标注能够叠加在图片上。这里的 Canvas 是结果可视化的关键：检测框、表情标签、年龄性别标签都不是写在原图上，而是画在覆盖层中。
 
-脚本根据图片的显示尺寸构造 \mintinline{javascript}|displaySize|，再调用 \mintinline{javascript}|faceapi.matchDimensions(canvas, displaySize)| 使画布尺寸与图片一致。这个步骤容易被忽略，但它直接影响标注位置。如果图片显示尺寸与 Canvas 尺寸不一致，模型输出框即使在原始坐标中正确，绘制到页面上也可能发生偏移。
+脚本根据图片的显示尺寸构造 \cmd{displaySize}，再调用 \cmd{faceapi.matchDimensions(canvas, displaySize)} 使画布尺寸与图片一致。这个步骤容易被忽略，但它直接影响标注位置。如果图片显示尺寸与 Canvas 尺寸不一致，模型输出框即使在原始坐标中正确，绘制到页面上也可能发生偏移。
 
 \subsubsection{检测结果的尺寸映射}
 
-模型推理完成后，脚本调用 \mintinline{javascript}|faceapi.resizeResults(detections, displaySize)| 将检测结果映射到当前显示尺寸。浏览器页面中图片可能受到 CSS 缩放影响，因此模型输出坐标与页面显示坐标不一定完全一致。通过尺寸映射，检测框和属性标签才能准确叠加到用户看到的图片位置上。
+模型推理完成后，脚本调用 \cmd{faceapi.resizeResults(detections, displaySize)} 将检测结果映射到当前显示尺寸。浏览器页面中图片可能受到 CSS 缩放影响，因此模型输出坐标与页面显示坐标不一定完全一致。通过尺寸映射，检测框和属性标签才能准确叠加到用户看到的图片位置上。
 
 图片页面的通用流程可以概括为五步：第一，监听文件上传事件；第二，将文件转换为图片对象并插入页面；第三，创建与图片匹配的 Canvas 覆盖层；第四，调用人脸检测和属性识别接口；第五，将结果映射到显示尺寸，并同时绘制到 Canvas 与渲染到侧边栏。这个流程也说明，浏览器端实验并不是单纯调用一个识别函数，而是包含输入转换、异步等待、尺寸同步、结果排序和界面反馈等多个工程环节。
 
@@ -131,9 +131,9 @@
 
 \subsubsection{模型调用链}
 
-表情识别由 \mintinline{text}|dist/expression_script.js| 实现。脚本在图片上传后调用如下链式接口：先执行 \mintinline{javascript}|detectAllFaces(image)| 检测所有人脸，再串联 \mintinline{javascript}|withFaceLandmarks()| 获取 68 点关键点，接着调用 \mintinline{javascript}|withFaceDescriptors()| 提取人脸描述子，最后调用 \mintinline{javascript}|withFaceExpressions()| 得到表情分类概率。最终返回的每个人脸结果中包含检测框、关键点、描述子和表情分数。
+表情识别由 \cmd{dist/expression_script.js} 实现。脚本在图片上传后调用如下链式接口：先执行 \cmd{detectAllFaces(image)} 检测所有人脸，再串联 \cmd{withFaceLandmarks()} 获取 68 点关键点，接着调用 \cmd{withFaceDescriptors()} 提取人脸描述子，最后调用 \cmd{withFaceExpressions()} 得到表情分类概率。最终返回的每个人脸结果中包含检测框、关键点、描述子和表情分数。
 
-表情模型输出七类表情概率：\mintinline{javascript}|neutral|、\mintinline{javascript}|happy|、\mintinline{javascript}|sad|、\mintinline{javascript}|angry|、\mintinline{javascript}|fearful|、\mintinline{javascript}|disgusted|、\mintinline{javascript}|surprised|。业务脚本将它们映射为中文标签：中性、高兴、难过、生气、害怕、厌恶和惊讶。映射后的标签更适合课程报告和中文界面阅读。
+表情模型输出七类表情概率：\cmd{neutral}、\cmd{happy}、\cmd{sad}、\cmd{angry}、\cmd{fearful}、\cmd{disgusted}、\cmd{surprised}。业务脚本将它们映射为中文标签：中性、高兴、难过、生气、害怕、厌恶和惊讶。映射后的标签更适合课程报告和中文界面阅读。
 
 \subsubsection{结果排序与概率展示}
 
@@ -166,13 +166,13 @@
 
 \subsubsection{模型调用链与输出字段}
 
-年龄与性别估计由 \mintinline{text}|dist/estimation_script.js| 实现。它与表情识别页面共享类似的图片上传、Canvas 创建和尺寸映射流程，但推理链路末尾换成 \mintinline{javascript}|withAgeAndGender()|。模型输出主要包括检测框、估计年龄、性别标签和性别置信度。脚本将 \mintinline{javascript}|male| 和 \mintinline{javascript}|female| 映射为“男性”和“女性”，并将年龄四舍五入后以“岁”为单位展示。
+年龄与性别估计由 \cmd{dist/estimation_script.js} 实现。它与表情识别页面共享类似的图片上传、Canvas 创建和尺寸映射流程，但推理链路末尾换成 \cmd{withAgeAndGender()}。模型输出主要包括检测框、估计年龄、性别标签和性别置信度。脚本将 \cmd{male} 和 \cmd{female} 映射为“男性”和“女性”，并将年龄四舍五入后以“岁”为单位展示。
 
 该模块体现了多任务人脸属性估计的基本思路。人脸检测模型先确定候选区域，关键点模型提供面部结构信息，描述子模型提取可用于表示身份或面部特征的向量，年龄性别模型再在检测到的人脸区域上输出外观属性。虽然脚本使用链式接口写得很短，但背后实际包含多个模型的顺序协作。
 
 \subsubsection{Canvas 标注与结果卡片}
 
-年龄性别页面使用 \mintinline{javascript}|faceapi.draw.drawDetections(canvas, resizedDetections)| 绘制检测框，然后为每张人脸创建 \mintinline{javascript}|faceapi.draw.DrawBox|，将年龄和性别字符串作为框标签叠加到图像上。同时，侧边栏结果卡片会展示年龄估计、性别判断和性别置信度。图像标注适合快速定位，侧边栏适合读取更完整的结构化结果。
+年龄性别页面使用 \cmd{faceapi.draw.drawDetections(canvas, resizedDetections)} 绘制检测框，然后为每张人脸创建 \cmd{faceapi.draw.DrawBox}，将年龄和性别字符串作为框标签叠加到图像上。同时，侧边栏结果卡片会展示年龄估计、性别判断和性别置信度。图像标注适合快速定位，侧边栏适合读取更完整的结构化结果。
 
 \begin{figure}[htbp]
   \centering
@@ -209,23 +209,23 @@
 
 \subsubsection{摄像头授权与视频流绑定}
 
-摄像头实时追踪由 \mintinline{text}|dist/webcam_script.js| 实现。页面启动后先显示“等待授权”状态，并检查浏览器是否支持媒体采集接口。脚本优先使用 \mintinline{javascript}|navigator.mediaDevices.getUserMedia|，同时保留旧版 \mintinline{javascript}|navigator.getUserMedia|、\mintinline{javascript}|webkitGetUserMedia| 和 \mintinline{javascript}|mozGetUserMedia| 的兼容写法。如果浏览器不支持这些接口，页面会显示“摄像头不可用”；如果用户拒绝授权或设备不可用，页面会显示“访问失败”。
+摄像头实时追踪由 \cmd{dist/webcam_script.js} 实现。页面启动后先显示“等待授权”状态，并检查浏览器是否支持媒体采集接口。脚本优先使用 \cmd{navigator.mediaDevices.getUserMedia}，同时保留旧版 \cmd{navigator.getUserMedia}、\cmd{webkitGetUserMedia} 和 \cmd{mozGetUserMedia} 的兼容写法。如果浏览器不支持这些接口，页面会显示“摄像头不可用”；如果用户拒绝授权或设备不可用，页面会显示“访问失败”。
 
-成功获取摄像头视频流后，脚本将 \mintinline{javascript}|stream| 赋给 \mintinline{javascript}|video.srcObject|。此时浏览器负责把摄像头画面播放到页面中的 \mintinline{html}|video| 元素。只有当视频触发 \mintinline{javascript}|play| 事件后，脚本才创建覆盖画布并启动周期性识别。这种顺序很合理，因为视频尺寸和播放状态尚未确定时，提前创建画布容易导致尺寸不匹配。
+成功获取摄像头视频流后，脚本将 \cmd{stream} 赋给 \cmd{video.srcObject}。此时浏览器负责把摄像头画面播放到页面中的 \cmd{video} 元素。只有当视频触发 \cmd{play} 事件后，脚本才创建覆盖画布并启动周期性识别。这种顺序很合理，因为视频尺寸和播放状态尚未确定时，提前创建画布容易导致尺寸不匹配。
 
 \subsubsection{周期检测与画布同步}
 
-实时追踪的核心是一个 100 ms 间隔的 \mintinline{javascript}|setInterval|。每次定时器触发时，脚本读取当前视频帧，调用 \mintinline{javascript}|detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())| 检测人脸，再串联关键点定位和表情识别。推理完成后，脚本将结果映射到当前显示尺寸，清空上一帧画布内容，并重新绘制检测框、68 点关键点和表情标签。
+实时追踪的核心是一个 100 ms 间隔的 \cmd{setInterval}。每次定时器触发时，脚本读取当前视频帧，调用 \cmd{detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())} 检测人脸，再串联关键点定位和表情识别。推理完成后，脚本将结果映射到当前显示尺寸，清空上一帧画布内容，并重新绘制检测框、68 点关键点和表情标签。
 
 与图片页面相比，摄像头页面更强调连续性和性能。图片页面只需要处理一次上传图片，摄像头页面则不断处理视频帧。如果每帧都执行复杂模型，低性能设备可能出现卡顿。因此脚本选择 Tiny Face Detector 作为实时检测器，并把识别间隔设置为 100 ms，相当于理论上每秒最多处理约 10 次。这个频率不是视频帧率本身，而是模型推理和标注更新频率。
 
-脚本中的 \mintinline{javascript}|syncCanvasSize| 会根据展示容器尺寸同步 Canvas 大小，窗口尺寸变化时也会重新匹配。这个函数解决了实时页面常见的标注错位问题：视频画面可能因为响应式布局变化而改变显示尺寸，如果 Canvas 不跟随更新，检测框就会偏离人脸位置。
+脚本中的 \cmd{syncCanvasSize} 会根据展示容器尺寸同步 Canvas 大小，窗口尺寸变化时也会重新匹配。这个函数解决了实时页面常见的标注错位问题：视频画面可能因为响应式布局变化而改变显示尺寸，如果 Canvas 不跟随更新，检测框就会偏离人脸位置。
 
 \subsubsection{结果节流与状态管理}
 
-摄像头页面不仅要绘制画布，还要更新侧边栏结果。高频更新 DOM 会带来额外开销，因此脚本设置了 \mintinline{javascript}|SIDEBAR_REFRESH_MS = 280|，并用 \mintinline{javascript}|lastResultsMarkup| 缓存上一次结果。当本次结果与上次相同，或者距离上次渲染时间不足 280 ms 时，脚本会跳过侧边栏更新。这样可以减少重复 DOM 写入，让页面把更多资源留给视频显示和模型推理。
+摄像头页面不仅要绘制画布，还要更新侧边栏结果。高频更新 DOM 会带来额外开销，因此脚本设置了 \cmd{SIDEBAR_REFRESH_MS = 280}，并用 \cmd{lastResultsMarkup} 缓存上一次结果。当本次结果与上次相同，或者距离上次渲染时间不足 280 ms 时，脚本会跳过侧边栏更新。这样可以减少重复 DOM 写入，让页面把更多资源留给视频显示和模型推理。
 
-脚本还监听视频的 \mintinline{javascript}|pause| 和 \mintinline{javascript}|ended| 事件，及时清除检测定时器并更新页面状态。这个细节说明实时推理任务需要生命周期管理：当视频已经暂停，如果定时器仍在后台运行，就会浪费计算资源，也可能造成用户误以为识别还在进行。
+脚本还监听视频的 \cmd{pause} 和 \cmd{ended} 事件，及时清除检测定时器并更新页面状态。这个细节说明实时推理任务需要生命周期管理：当视频已经暂停，如果定时器仍在后台运行，就会浪费计算资源，也可能造成用户误以为识别还在进行。
 
 \begin{figure}[htbp]
   \centering
@@ -238,7 +238,7 @@
 
 \subsubsection{页面访问与资源检查}
 
-复现实验时，首先需要确认项目目录中的静态资源完整。三个 HTML 页面必须能够访问 \mintinline{text}|css/|、\mintinline{text}|js/|、\mintinline{text}|dist/|、\mintinline{text}|models/| 和 \mintinline{text}|public/| 等目录。若页面打开后只有布局而没有识别能力，通常需要检查 \mintinline{text}|dist/face-api.min.js| 是否加载成功；若页面能够显示但长时间无法识别，通常需要检查 \mintinline{text}|models/| 中的权重文件是否存在，以及浏览器控制台是否出现模型加载失败信息。
+复现实验时，首先需要确认项目目录中的静态资源完整。三个 HTML 页面必须能够访问 \cmd{css/}、\cmd{js/}、\cmd{dist/}、\cmd{models/} 和 \cmd{public/} 等目录。若页面打开后只有布局而没有识别能力，通常需要检查 \cmd{dist/face-api.min.js} 是否加载成功；若页面能够显示但长时间无法识别，通常需要检查 \cmd{models/} 中的权重文件是否存在，以及浏览器控制台是否出现模型加载失败信息。
 
 对于图片类页面，实验观察可以从三个层次记录。第一层是页面结构是否正常，包括导航栏、上传控件、结果区域和图片展示区域是否出现。第二层是模型初始化是否正常，即上传图片后是否能进入“正在识别”状态并最终绘制结果。第三层是识别结果是否合理，包括检测框是否覆盖人脸、侧边栏结果数量是否与图中人脸数量一致、概率或置信度是否以可读形式展示。
 
@@ -246,11 +246,11 @@
 
 \subsubsection{HTML 结构与脚本变量对应}
 
-三个页面的 HTML 结构与脚本变量之间存在明确对应关系。表情识别和年龄性别估计页面都包含 \mintinline{html}|id="upload"| 的文件输入控件，脚本通过 \mintinline{javascript}|document.getElementById("upload")| 获取它；右侧结果区域使用 \mintinline{html}|id="analysis-stage"|，脚本把图片和 Canvas 都插入这个区域；侧边栏结果则分别使用 \mintinline{html}|id="expression-results"| 和 \mintinline{html}|id="estimation-results"|。
+三个页面的 HTML 结构与脚本变量之间存在明确对应关系。表情识别和年龄性别估计页面都包含 \cmd{id="upload"} 的文件输入控件，脚本通过 \cmd{document.getElementById("upload")} 获取它；右侧结果区域使用 \cmd{id="analysis-stage"}，脚本把图片和 Canvas 都插入这个区域；侧边栏结果则分别使用 \cmd{id="expression-results"} 和 \cmd{id="estimation-results"}。
 
-摄像头页面的关键元素不同。视频元素使用 \mintinline{html}|id="video"|，脚本把摄像头流绑定到该元素；画布覆盖层插入 \mintinline{html}|id="tracking-stage"| 对应的容器；摄像头状态写入 \mintinline{html}|id="webcam-status"|；实时识别结果写入 \mintinline{html}|id="webcam-results"|。这种 DOM 命名方式让页面结构和业务脚本能够直接对应，便于阅读和调试。
+摄像头页面的关键元素不同。视频元素使用 \cmd{id="video"}，脚本把摄像头流绑定到该元素；画布覆盖层插入 \cmd{id="tracking-stage"} 对应的容器；摄像头状态写入 \cmd{id="webcam-status"}；实时识别结果写入 \cmd{id="webcam-results"}。这种 DOM 命名方式让页面结构和业务脚本能够直接对应，便于阅读和调试。
 
-从报告写作角度看，记录这些 DOM 对应关系有两个作用。第一，它能证明实验分析来自实际代码，而不是只描述模型概念。第二，它能解释为什么 HTML 中的元素命名会影响脚本运行。如果某个元素的 \mintinline{html}|id| 被改动，而脚本仍按旧名称查找，页面就会在初始化阶段出现空引用错误。
+从报告写作角度看，记录这些 DOM 对应关系有两个作用。第一，它能证明实验分析来自实际代码，而不是只描述模型概念。第二，它能解释为什么 HTML 中的元素命名会影响脚本运行。如果某个元素的 \cmd{id} 被改动，而脚本仍按旧名称查找，页面就会在初始化阶段出现空引用错误。
 
 \begin{figure}[htbp]
   \centering
@@ -269,19 +269,19 @@
 
 \subsubsection{模型文件加载失败}
 
-浏览器端实验最常见的失败场景之一是模型文件加载失败。如果 \mintinline{text}|MODEL_URL| 指向错误目录，或者 \mintinline{text}|models/| 中缺少权重文件，\mintinline{javascript}|Promise.all| 将无法正常进入后续流程。用户看到的现象可能是页面可以打开，但上传图片后没有反应，或者摄像头页面一直停留在初始状态。此时应优先检查浏览器控制台和网络请求列表。
+浏览器端实验最常见的失败场景之一是模型文件加载失败。如果 \cmd{MODEL_URL} 指向错误目录，或者 \cmd{models/} 中缺少权重文件，\cmd{Promise.all} 将无法正常进入后续流程。用户看到的现象可能是页面可以打开，但上传图片后没有反应，或者摄像头页面一直停留在初始状态。此时应优先检查浏览器控制台和网络请求列表。
 
-由于模型加载是异步过程，页面最好提供加载失败提示。当前脚本主要处理正常加载路径，对于模型加载异常的用户反馈仍有改进空间。课程报告可以把这一点列为后续优化方向：在 \mintinline{javascript}|Promise.all| 后补充 \mintinline{javascript}|catch| 分支，提示“模型资源加载失败，请检查 models 目录或网络路径”。
+由于模型加载是异步过程，页面最好提供加载失败提示。当前脚本主要处理正常加载路径，对于模型加载异常的用户反馈仍有改进空间。课程报告可以把这一点列为后续优化方向：在 \cmd{Promise.all} 后补充 \cmd{catch} 分支，提示“模型资源加载失败，请检查 models 目录或网络路径”。
 
 \subsubsection{输入为空或格式异常}
 
-图片页面已经对空文件选择做了简单保护：当 \mintinline{javascript}|imageUpload.files.length| 为 0 时，脚本直接返回。由于上传控件使用 \mintinline{html}|accept="image/*"|，浏览器会尽量限制用户选择非图片文件。但这种限制并不是严格安全边界，实际应用仍应在脚本中处理图片解码失败的异常。
+图片页面已经对空文件选择做了简单保护：当 \cmd{imageUpload.files.length} 为 0 时，脚本直接返回。由于上传控件使用 \cmd{accept="image/*"}，浏览器会尽量限制用户选择非图片文件。但这种限制并不是严格安全边界，实际应用仍应在脚本中处理图片解码失败的异常。
 
 如果图片过大，浏览器端推理可能明显变慢，甚至造成页面短暂无响应。报告中可以说明，课程实验适合使用清晰但尺寸适中的图片。实际应用中可以在前端对图片进行压缩、缩放或限制最大尺寸，再送入模型推理，从而减少计算开销。
 
 \subsubsection{摄像头权限与安全上下文}
 
-摄像头页面还可能受到浏览器安全策略影响。现代浏览器通常要求摄像头访问发生在安全上下文中，例如 HTTPS 或本机 localhost 环境。若直接以某些文件协议打开页面，摄像头接口可能不可用。脚本虽然兼容新旧 \mintinline{javascript}|getUserMedia| 接口，但无法绕过浏览器权限策略。
+摄像头页面还可能受到浏览器安全策略影响。现代浏览器通常要求摄像头访问发生在安全上下文中，例如 HTTPS 或本机 localhost 环境。若直接以某些文件协议打开页面，摄像头接口可能不可用。脚本虽然兼容新旧 \cmd{getUserMedia} 接口，但无法绕过浏览器权限策略。
 
 用户拒绝授权、设备被其他程序占用、摄像头不存在或浏览器不支持媒体采集接口，都会导致实时追踪失败。当前脚本会显示“访问失败”或“不支持”等状态，这对于实验页面已经比较友好。后续若扩展为正式应用，还可以增加更具体的错误分类，例如权限拒绝、设备未找到、设备忙碌和安全上下文不满足。
 
@@ -326,7 +326,7 @@
   \label{fig:face_detection_collage}
 \end{figure}
 
-从工程实现看，项目具有较好的演示性。页面入口清楚，模型资源保存在本地，业务脚本集中在 \mintinline{text}|dist/|，示例图片和人物图片保存在 \mintinline{text}|public/|。这种组织方式方便教师讲解，也方便学生对照代码与报告复现实验。相比只展示最终效果，报告中分析文件结构和脚本流程更能体现课程实验的完整性。
+从工程实现看，项目具有较好的演示性。页面入口清楚，模型资源保存在本地，业务脚本集中在 \cmd{dist/}，示例图片和人物图片保存在 \cmd{public/}。这种组织方式方便教师讲解，也方便学生对照代码与报告复现实验。相比只展示最终效果，报告中分析文件结构和脚本流程更能体现课程实验的完整性。
 
 \subsubsection{性能影响因素}
 
@@ -378,6 +378,6 @@
 
 \subsection{本章小结}
 
-本章围绕 \mintinline{text}|face-recognition| 项目分析了浏览器端人脸分析实验。实验展示了静态网页如何利用 \mintinline{text}|face-api.js| 加载本地预训练模型，并在图片和摄像头视频流两类输入上完成人脸检测、关键点定位、表情识别以及年龄性别估计。章节重点放在前端推理阶段，包括页面结构、模型加载、输入转换、Canvas 绘制、结果渲染和状态管理。
+本章围绕 \cmd{face-recognition} 项目分析了浏览器端人脸分析实验。实验展示了静态网页如何利用 \cmd{face-api.js} 加载本地预训练模型，并在图片和摄像头视频流两类输入上完成人脸检测、关键点定位、表情识别以及年龄性别估计。章节重点放在前端推理阶段，包括页面结构、模型加载、输入转换、Canvas 绘制、结果渲染和状态管理。
 
 通过三个模块的对比可以看出，浏览器端深度学习推理适合课程演示、交互原型和轻量级体验场景。它降低了后端部署成本，也减少了敏感图像上传的需求。但它仍然受到设备性能、浏览器环境、输入质量和模型偏差影响。因此，在分析实验结果时，既要关注页面能否完成检测和属性输出，也要结合输入质量、运行环境和模型适用范围理解结果的可靠性。

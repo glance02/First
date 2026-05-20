@@ -3,28 +3,28 @@
 \section*{附录\quad 实验关键代码}
 \addcontentsline{toc}{section}{附录\quad 实验关键代码}
 
-本附录列出报告实验中与功能实现直接相关的关键代码片段。为避免重复展示第三方库源码，附录不收录 \mintinline{text}|face-api.min.js|，只展示页面如何引入模型库、承载输入输出区域，以及三个实验模块如何完成模型加载、图片推理、结果渲染和摄像头实时追踪。同时，附录还收录 dlib 人脸识别训练示例的关键代码，以及 Unity 森林 VR 场景中用于修复材质显示问题的 Shader 文件。
+本附录节选报告实验中与功能实现直接相关的关键代码，便于读者对照正文中的流程分析查看具体实现。附录不完整粘贴压缩后的第三方库源码，例如 \cmd{face-api.min.js}，而是保留页面入口、展示容器、模型加载、图片推理、身份匹配、结果渲染和摄像头实时追踪等关键片段。同时，附录也摘录 dlib 人脸识别训练示例和 Unity 森林 VR 场景中的 Shader、移动系统代码，用于说明模型训练思想和场景交互实现。
 
 \subsection*{页面入口与展示容器}
 \addcontentsline{toc}{subsection}{页面入口与展示容器}
 
-图片表情识别页面在文档头部延迟加载 \mintinline{text}|face-api.min.js| 和当前页面的业务脚本。主体区域左侧提供图片上传控件和识别结果容器，右侧的 \mintinline{html}|analysis-stage| 用于插入用户上传的图片和覆盖绘制结果的画布。
+图片表情识别页面在文档头部延迟加载 \cmd{face-api.min.js} 和当前页面的业务脚本。主体区域左侧提供图片上传控件和识别结果容器，右侧的 \cmd{analysis-stage} 用于插入用户上传的图片和覆盖绘制结果的画布。
 
-这里保留脚本标签的原因是，代码引入顺序直接影响页面能否运行。\mintinline{text}|face-api.min.js| 必须先于业务脚本加载，业务脚本才能访问 \mintinline{javascript}|faceapi| 对象；\mintinline{html}|defer| 则保证脚本在 DOM 解析完成后按顺序执行，使业务脚本能够拿到上传控件、展示区域等真实节点。
+这里保留脚本标签的原因是，代码引入顺序直接影响页面能否运行。\cmd{face-api.min.js} 必须先于业务脚本加载，业务脚本才能访问 \cmd{faceapi} 对象；\cmd{defer} 则保证脚本在 DOM 解析完成后按顺序执行，使业务脚本能够拿到上传控件、展示区域等真实节点。
 
 \inputminted[firstline=21,lastline=22,firstnumber=21]{html}{code/face-recognition/face_expression_recognition.html}
 
 \inputminted[firstline=75,lastline=101,firstnumber=75]{html}{code/face-recognition/face_expression_recognition.html}
 
-年龄与性别估计页面的入口结构与表情识别页面基本一致，只是业务脚本替换为 \mintinline{text}|dist/estimation_script.js|，结果容器也变为 \mintinline{html}|estimation-results|。这种“页面结构相同、业务脚本不同”的组织方式有利于复用样式和交互习惯。
+年龄与性别估计页面的入口结构与表情识别页面基本一致，只是业务脚本替换为 \cmd{dist/estimation_script.js}，结果容器也变为 \cmd{estimation-results}。这种“页面结构相同、业务脚本不同”的组织方式有利于复用样式和交互习惯。
 
 \inputminted[firstline=21,lastline=22,firstnumber=21]{html}{code/face-recognition/age_gender_estimation.html}
 
 \inputminted[firstline=75,lastline=100,firstnumber=75]{html}{code/face-recognition/age_gender_estimation.html}
 
-摄像头实时追踪页面同样通过脚本标签加载模型库和业务逻辑。页面中的追踪区域 \mintinline{html}|tracking-stage| 用来叠加视频与检测画布。
+摄像头实时追踪页面同样通过脚本标签加载模型库和业务逻辑。页面中的追踪区域 \cmd{tracking-stage} 用来叠加视频与检测画布。
 
-\mintinline{html}|video| 元素负责承接浏览器摄像头视频流，并为后续逐帧识别提供输入。
+\cmd{video} 元素负责承接浏览器摄像头视频流，并为后续逐帧识别提供输入。
 
 \inputminted[firstline=21,lastline=22,firstnumber=21]{html}{code/face-recognition/webcam_face_tracking.html}
 
@@ -33,13 +33,13 @@
 \subsection*{图片表情识别脚本}
 \addcontentsline{toc}{subsection}{图片表情识别脚本}
 
-表情识别脚本首先取得页面中的上传控件、展示区域和结果区域，并定义本地模型路径。随后通过 \mintinline{javascript}|Promise.all| 并行加载检测、关键点、人脸描述子、表情识别和 SSD MobileNetV1 模型，全部模型加载完成后才进入 \mintinline{javascript}|start| 流程。
+表情识别脚本首先取得页面中的上传控件、展示区域和结果区域，并定义本地模型路径。随后通过 \cmd{Promise.all} 并行加载检测、关键点、人脸描述子、表情识别和 SSD MobileNetV1 模型，全部模型加载完成后才进入 \cmd{start} 流程。
 
 \inputminted[firstline=1,lastline=23,firstnumber=1]{javascript}{code/face-recognition/dist/expression_script.js}
 
-这一段代码体现了两个关键点。第一，\mintinline{javascript}|MODEL_URL| 指向 \mintinline{text}|./models|，说明权重从项目本地目录加载，不依赖远程网络。第二，模型加载使用 \mintinline{javascript}|Promise.all|，所有异步加载任务都完成后才调用 \mintinline{javascript}|start|。如果缺少这一步等待，用户上传图片时模型可能尚未准备好，推理调用会失败。
+这一段代码体现了两个关键点。第一，\cmd{MODEL_URL} 指向 \cmd{./models}，说明权重从项目本地目录加载，不依赖远程网络。第二，模型加载使用 \cmd{Promise.all}，所有异步加载任务都完成后才调用 \cmd{start}。如果缺少这一步等待，用户上传图片时模型可能尚未准备好，推理调用会失败。
 
-为了让模型输出更容易阅读，脚本将 \mintinline{text}|face-api.js| 返回的英文表情标签映射为中文标签，并按检测框横坐标排序多张人脸。结果渲染函数会选出概率最高的主表情，同时把七类表情概率渲染为进度条，便于观察模型对不同表情类别的置信度分布。
+为了让模型输出更容易阅读，脚本将 \cmd{face-api.js} 返回的英文表情标签映射为中文标签，并按检测框横坐标排序多张人脸。结果渲染函数会选出概率最高的主表情，同时把七类表情概率渲染为进度条，便于观察模型对不同表情类别的置信度分布。
 
 \inputminted[firstline=38,lastline=100,firstnumber=38]{javascript}{code/face-recognition/dist/expression_script.js}
 
@@ -47,22 +47,22 @@
 
 \inputminted[firstline=102,lastline=146,firstnumber=102]{javascript}{code/face-recognition/dist/expression_script.js}
 
-其中 \mintinline{javascript}|faceapi.bufferToImage| 负责把本地文件对象转换成浏览器可绘制的图片元素，\mintinline{javascript}|createCanvasFromMedia| 创建与图片对应的覆盖画布，\mintinline{javascript}|matchDimensions| 保证画布坐标系与图片显示尺寸一致。链式调用 \mintinline{javascript}|detectAllFaces(image).withFaceLandmarks().withFaceDescriptors().withFaceExpressions()| 表示先检测所有人脸，再补充关键点、人脸描述子和表情结果。最后的 \mintinline{javascript}|resizeResults| 用于把模型输出坐标映射回展示尺寸。
+其中 \cmd{faceapi.bufferToImage} 负责把本地文件对象转换成浏览器可绘制的图片元素，\cmd{createCanvasFromMedia} 创建与图片对应的覆盖画布，\cmd{matchDimensions} 保证画布坐标系与图片显示尺寸一致。链式调用 \cmd{detectAllFaces(image).withFaceLandmarks().withFaceDescriptors().withFaceExpressions()} 表示先检测所有人脸，再补充关键点、人脸描述子和表情结果。最后的 \cmd{resizeResults} 用于把模型输出坐标映射回展示尺寸。
 
 \subsection*{年龄与性别估计脚本}
 \addcontentsline{toc}{subsection}{年龄与性别估计脚本}
 
-年龄与性别估计脚本与表情识别脚本结构相近，但加载的任务模型不同。它除了检测、关键点和描述子模型外，还加载 \mintinline{javascript}|ageGenderNet|，用于输出估计年龄、性别标签和性别分类置信度。
+年龄与性别估计脚本与表情识别脚本结构相近，但加载的任务模型不同。它除了检测、关键点和描述子模型外，还加载 \cmd{ageGenderNet}，用于输出估计年龄、性别标签和性别分类置信度。
 
 \inputminted[firstline=1,lastline=17,firstnumber=1]{javascript}{code/face-recognition/dist/estimation_script.js}
 
-这一模块同样使用本地 \mintinline{text}|models| 目录。与表情识别相比，它把任务网络从 \mintinline{javascript}|faceExpressionNet| 换成 \mintinline{javascript}|ageGenderNet|。这说明页面的基础流程可以复用：只要输入仍然是人脸区域，后续可以在同一检测结果上接入不同属性估计网络。
+这一模块同样使用本地 \cmd{models} 目录。与表情识别相比，它把任务网络从 \cmd{faceExpressionNet} 换成 \cmd{ageGenderNet}。这说明页面的基础流程可以复用：只要输入仍然是人脸区域，后续可以在同一检测结果上接入不同属性估计网络。
 
-结果渲染部分把模型返回的 \mintinline{javascript}|male| 和 \mintinline{javascript}|female| 映射为中文展示文本，并将年龄估计值四舍五入后写入结果卡片。性别置信度继续用百分比和进度条表示，使侧边栏结果能够与右侧检测框形成对照。
+结果渲染部分把模型返回的 \cmd{male} 和 \cmd{female} 映射为中文展示文本，并将年龄估计值四舍五入后写入结果卡片。性别置信度继续用百分比和进度条表示，使侧边栏结果能够与右侧检测框形成对照。
 
 \inputminted[firstline=38,lastline=91,firstnumber=38]{javascript}{code/face-recognition/dist/estimation_script.js}
 
-图片推理流程仍然从上传事件开始。与表情识别不同的是，链式调用最后使用 \mintinline{javascript}|withAgeAndGender|，并在画布上额外通过 \mintinline{javascript}|faceapi.draw.DrawBox| 绘制包含年龄和性别的检测框标签。
+图片推理流程仍然从上传事件开始。与表情识别不同的是，链式调用最后使用 \cmd{withAgeAndGender}，并在画布上额外通过 \cmd{faceapi.draw.DrawBox} 绘制包含年龄和性别的检测框标签。
 
 \inputminted[firstline=93,lastline=145,firstnumber=93]{javascript}{code/face-recognition/dist/estimation_script.js}
 
@@ -71,17 +71,17 @@
 \subsection*{摄像头实时追踪脚本}
 \addcontentsline{toc}{subsection}{摄像头实时追踪脚本}
 
-摄像头脚本在页面初始化时保存视频元素、追踪区域、状态区和结果区引用，并维护覆盖画布、定时器和结果刷新时间等状态。模型加载完成后进入 \mintinline{javascript}|startVideo|，为后续实时识别做准备。
+摄像头脚本在页面初始化时保存视频元素、追踪区域、状态区和结果区引用，并维护覆盖画布、定时器和结果刷新时间等状态。模型加载完成后进入 \cmd{startVideo}，为后续实时识别做准备。
 
 \inputminted[firstline=1,lastline=49,firstnumber=1]{javascript}{code/face-recognition/dist/webcam_script.js}
 
-与图片页面不同，摄像头页面需要维护跨帧状态。\mintinline{javascript}|canvas| 保存覆盖画布，\mintinline{javascript}|detectionInterval| 保存定时器编号，\mintinline{javascript}|lastResultsMarkup| 和 \mintinline{javascript}|lastResultsRenderAt| 用于控制侧边栏刷新频率。这些变量保证页面在连续视频输入下不会不断创建新画布或过度更新 DOM。
+与图片页面不同，摄像头页面需要维护跨帧状态。\cmd{canvas} 保存覆盖画布，\cmd{detectionInterval} 保存定时器编号，\cmd{lastResultsMarkup} 和 \cmd{lastResultsRenderAt} 用于控制侧边栏刷新频率。这些变量保证页面在连续视频输入下不会不断创建新画布或过度更新 DOM。
 
-实时页面需要频繁更新侧边栏，因此脚本把结果 HTML 的生成和渲染拆开处理。渲染函数会比较本次结果与上次结果，并使用 \mintinline{javascript}|SIDEBAR_REFRESH_MS| 控制刷新间隔，避免每 100 ms 都重复写入 DOM。
+实时页面需要频繁更新侧边栏，因此脚本把结果 HTML 的生成和渲染拆开处理。渲染函数会比较本次结果与上次结果，并使用 \cmd{SIDEBAR_REFRESH_MS} 控制刷新间隔，避免每 100 ms 都重复写入 DOM。
 
 \inputminted[firstline=87,lastline=160,firstnumber=87]{javascript}{code/face-recognition/dist/webcam_script.js}
 
-摄像头启动函数兼容了现代 \mintinline{javascript}|navigator.mediaDevices.getUserMedia| 和旧版浏览器前缀接口。脚本会先显示等待授权状态，在用户允许访问摄像头后把视频流写入 \mintinline{javascript}|video.srcObject|；如果浏览器不支持或授权失败，则更新状态区和结果区提示。
+摄像头启动函数兼容了现代 \cmd{navigator.mediaDevices.getUserMedia} 和旧版浏览器前缀接口。脚本会先显示等待授权状态，在用户允许访问摄像头后把视频流写入 \cmd{video.srcObject}；如果浏览器不支持或授权失败，则更新状态区和结果区提示。
 
 \inputminted[firstline=162,lastline=216,firstnumber=162]{javascript}{code/face-recognition/dist/webcam_script.js}
 
@@ -89,12 +89,27 @@
 
 \inputminted[firstline=218,lastline=259,firstnumber=218]{javascript}{code/face-recognition/dist/webcam_script.js}
 
-这段代码中的 \mintinline{javascript}|new faceapi.TinyFaceDetectorOptions()| 表明实时检测采用轻量级检测器。每 100 ms 执行一次推理大致相当于每秒最多 10 次检测，实际帧率还会受到设备性能、浏览器和摄像头分辨率影响。定时器中先调用 \mintinline{javascript}|clearRect| 清除上一帧绘制内容，再绘制新一帧结果，否则旧检测框会残留在画布上。
+这段代码中的 \cmd{new faceapi.TinyFaceDetectorOptions()} 表明实时检测采用轻量级检测器。每 100 ms 执行一次推理大致相当于每秒最多 10 次检测，实际帧率还会受到设备性能、浏览器和摄像头分辨率影响。定时器中先调用 \cmd{clearRect} 清除上一帧绘制内容，再绘制新一帧结果，否则旧检测框会残留在画布上。
+
+\subsection*{人脸匹配与参考样本加载代码}
+\addcontentsline{toc}{subsection}{人脸匹配与参考样本加载代码}
+
+除表情识别、年龄性别估计和实时追踪外，浏览器项目还保留了基于参考样本的人脸匹配流程。该流程先加载人脸识别、关键点和检测模型，再读取已按人物姓名分组的参考图片，生成带标签的人脸描述子集合，最后构造 \cmd{FaceMatcher} 用于新图片的身份匹配。
+
+\inputminted[firstline=1,lastline=18,firstnumber=1]{javascript}{code/face-recognition/dist/image_script.js}
+
+图片上传后，脚本会对新图片执行人脸检测、关键点定位和描述子提取，再把每个检测结果交给 \cmd{faceMatcher.findBestMatch} 进行最近邻匹配。匹配结果不是模型直接输出的人名，而是由新图片描述子与参考描述子之间的距离比较得到。
+
+\inputminted[firstline=43,lastline=59,firstnumber=43]{javascript}{code/face-recognition/dist/image_script.js}
+
+参考样本加载函数体现了注册图片与训练数据的区别。脚本从 \cmd{public/img/labeled_images} 下读取若干人物目录，每个人物目录提供 5 张参考图片；这些图片只用于提取描述子并构造 \cmd{LabeledFaceDescriptors}，不会更新预训练模型参数。
+
+\inputminted[firstline=65,lastline=87,firstnumber=65]{javascript}{code/face-recognition/dist/image_script.js}
 
 \subsection*{开源人脸识别模型训练代码}
 \addcontentsline{toc}{subsection}{开源人脸识别模型训练代码}
 
-本项目网页端直接使用 \mintinline{text}|face-api.js| 的预训练权重，并没有在浏览器项目中重新训练深度网络。为了说明人脸识别模型的训练思想，本节引用已经克隆到 \mintinline{text}|code/dlib/| 目录中的 dlib 开源训练示例 \mintinline{text}|dnn_metric_learning_on_images_ex.cpp|。该示例展示了如何使用 \mintinline{cpp}|loss_metric| 训练人脸嵌入模型，使同一身份的人脸向量距离更近，不同身份的人脸向量距离更远。
+本项目网页端直接使用 \cmd{face-api.js} 的预训练权重，并没有在浏览器项目中重新训练深度网络。为了说明人脸识别模型的训练思想，本节摘录 dlib 官方开源训练示例 \cmd{dnn_metric_learning_on_images_ex.cpp} 的关键片段。该示例展示了如何使用 \cmd{loss_metric} 训练人脸嵌入模型，使同一身份的人脸向量距离更近，不同身份的人脸向量距离更远。
 
 示例开头说明了深度度量学习在人脸识别中的作用：模型不直接把图像分类为固定身份，而是学习一个向量空间，再用距离或最近邻方法完成识别。
 
@@ -104,29 +119,29 @@
 
 \inputminted[firstline=38,lastline=75,firstnumber=38]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
-mini-batch 采样函数继续从每个身份下随机选择图片，并生成与图片对应的整数标签。这个标签不是人物姓名，而是身份在 \mintinline{cpp}|objs| 外层向量中的索引。函数还进行了颜色扰动和图像抖动，并检查同一 batch 中图片尺寸是否一致。
+mini-batch 采样函数继续从每个身份下随机选择图片，并生成与图片对应的整数标签。这个标签不是人物姓名，而是身份在 \cmd{objs} 外层向量中的索引。函数还进行了颜色扰动和图像抖动，并检查同一 batch 中图片尺寸是否一致。
 
 \inputminted[firstline=77,lastline=136,firstnumber=77]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
-网络结构部分定义了训练网络和测试网络。训练网络使用带批归一化的 ResNet 主体，输出层为 \mintinline{cpp}|fc_no_bias<128>|，损失层为 \mintinline{cpp}|loss_metric|；测试网络则把批归一化替换为固定仿射变换，便于推理阶段稳定使用。
+网络结构部分定义了训练网络和测试网络。训练网络使用带批归一化的 ResNet 主体，输出层为 \cmd{fc_no_bias<128>}，损失层为 \cmd{loss_metric}；测试网络则把批归一化替换为固定仿射变换，便于推理阶段稳定使用。
 
 \inputminted[firstline=144,lastline=194,firstnumber=144]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
-训练阶段创建 \mintinline{cpp}|dnn_trainer|，设置学习率和同步文件，并通过多个加载线程持续产生 mini-batch。每个 mini-batch 包含多个身份以及每个身份的多张图片，使模型可以同时学习同一身份和不同身份之间的距离关系。训练结束后，示例把网络清理并序列化保存为 \mintinline{text}|metric_network_renset.dat|。
+训练阶段创建 \cmd{dnn_trainer}，设置学习率和同步文件，并通过多个加载线程持续产生 mini-batch。每个 mini-batch 包含多个身份以及每个身份的多张图片，使模型可以同时学习同一身份和不同身份之间的距离关系。训练结束后，示例把网络清理并序列化保存为 \cmd{metric_network_renset.dat}。
 
-训练器初始化代码如下。这里的 \mintinline{cpp}|sgd(0.0001, 0.9)| 设置了权重衰减和动量，\mintinline{cpp}|set_learning_rate(0.1)| 设置初始学习率，\mintinline{cpp}|set_synchronization_file| 则用于周期性同步训练状态。
+训练器初始化代码如下。这里的 \cmd{sgd(0.0001, 0.9)} 设置了权重衰减和动量，\cmd{set_learning_rate(0.1)} 设置初始学习率，\cmd{set_synchronization_file} 则用于周期性同步训练状态。
 
 \inputminted[firstline=218,lastline=227,firstnumber=218]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
-数据加载线程通过 \mintinline{cpp}|dlib::pipe| 把图片和标签送入训练主线程。主线程只需要不断取出队列中的 batch 并调用 \mintinline{cpp}|train_one_step|，从而把耗时的图片读取、解码和增强工作与训练计算并行起来。
+数据加载线程通过 \cmd{dlib::pipe} 把图片和标签送入训练主线程。主线程只需要不断取出队列中的 batch 并调用 \cmd{train_one_step}，从而把耗时的图片读取、解码和增强工作与训练计算并行起来。
 
 \inputminted[firstline=229,lastline=272,firstnumber=229]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
-学习率降到阈值以下后，示例保存网络并关闭加载线程。保存模型前调用 \mintinline{cpp}|net.clean()| 是为了去掉训练时的临时缓存，使序列化文件更适合后续推理使用。
+学习率降到阈值以下后，示例保存网络并关闭加载线程。保存模型前调用 \cmd{net.clean()} 是为了去掉训练时的临时缓存，使序列化文件更适合后续推理使用。
 
 \inputminted[firstline=274,lastline=289,firstnumber=274]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
-训练完成后，示例把图片送入测试网络得到嵌入向量，并根据向量距离判断两张图片是否属于同一身份。这个过程与浏览器项目中的 \mintinline{javascript}|FaceMatcher| 思路一致：先得到人脸描述子，再依据距离阈值完成匹配。
+训练完成后，示例把图片送入测试网络得到嵌入向量，并根据向量距离判断两张图片是否属于同一身份。这个过程与浏览器项目中的 \cmd{FaceMatcher} 思路一致：先得到人脸描述子，再依据距离阈值完成匹配。
 
 \inputminted[firstline=295,lastline=338,firstnumber=295]{cpp}{code/dlib/examples/dnn_metric_learning_on_images_ex.cpp}
 
@@ -135,25 +150,140 @@ mini-batch 采样函数继续从每个身份下随机选择图片，并生成与
 \subsection*{Unity 森林场景 URP Shader 修复代码}
 \addcontentsline{toc}{subsection}{Unity 森林场景 URP Shader 修复代码}
 
-第三章中森林资源包导入 Unity 6 + URP 项目后出现大面积粉色材质，核心原因是原资源包自带的 \mintinline{text}|StandardNoCulling.shader| 使用旧 Built-in Render Pipeline 的 Surface Shader 写法，无法在 URP 中正常渲染。本节收录修改后的 Shader 文件。该文件将原 Shader 改写为 URP 可用的 HLSL 实现，并保留双面渲染、透明裁剪、基础贴图、颜色、光滑度和阴影投射等植被材质所需功能。
+第三章中森林资源包导入 Unity 6 + URP 项目后出现大面积粉色材质，核心原因是原资源包自带的 \cmd{StandardNoCulling.shader} 使用旧 Built-in Render Pipeline 的 Surface Shader 写法，无法在 URP 中正常渲染。本节收录修改后的 Shader 文件。该文件将原 Shader 改写为 URP 可用的 HLSL 实现，并保留双面渲染、透明裁剪、基础贴图、颜色、光滑度和阴影投射等植被材质所需功能。
 
 \inputminted{text}{code/chapter3/StandardNoCulling.shader}
 
 \subsection*{Unity VR 移动系统关键代码}
 \addcontentsline{toc}{subsection}{Unity VR 移动系统关键代码}
 
-第三章中的森林场景移动能力并非来自森林资源包本身，而是来自 Unity VR 模板和 XR Interaction Toolkit。移动输入由 \mintinline{text}|XRI Default Input Actions.inputactions| 定义，再由 \mintinline{text}|ControllerInputActionManager.cs| 管理连续移动、传送移动、连续转向、瞬间转向和 UI 滚动等输入动作。下面代码片段展示了脚本中保存的输入动作引用和移动模式开关。
+第三章中的森林场景移动能力并非来自森林资源包本身，而是来自 Unity VR 模板和 XR Interaction Toolkit。移动输入由 \cmd{XRI Default Input Actions.inputactions} 定义，再由 \cmd{ControllerInputActionManager.cs} 管理连续移动、传送移动、连续转向、瞬间转向和 UI 滚动等输入动作。下面代码片段展示了脚本中保存的输入动作引用和移动模式开关。
 
 \inputminted[firstline=51,lastline=83,firstnumber=51]{csharp}{code/chapter3/ControllerInputActionManager.cs}
 
-当移动模式发生变化时，脚本通过 \mintinline{csharp}|UpdateLocomotionActions| 启用或禁用对应输入动作。若启用连续移动，则使用 \mintinline{text}|Move|；若关闭连续移动，则启用 \mintinline{text}|Teleport Mode| 和 \mintinline{text}|Teleport Mode Cancel|，从而进入传送移动方式。转向方式也在连续转向和瞬间转向之间切换。
+当移动模式发生变化时，脚本通过 \cmd{UpdateLocomotionActions} 启用或禁用对应输入动作。若启用连续移动，则使用 \cmd{Move}；若关闭连续移动，则启用 \cmd{Teleport Mode} 和 \cmd{Teleport Mode Cancel}，从而进入传送移动方式。转向方式也在连续转向和瞬间转向之间切换。
 
 \inputminted[firstline=458,lastline=468,firstnumber=458]{csharp}{code/chapter3/ControllerInputActionManager.cs}
 
-连续移动方向由 \mintinline{text}|DynamicMoveProvider.cs| 处理。该脚本继承自 XR Interaction Toolkit 的 \mintinline{csharp}|ContinuousMoveProvider|，并定义移动方向可以相对于头显或手柄计算。这样在 VR 场景中，用户既可以按照视线方向前进，也可以按照控制器指向进行移动。
+连续移动方向由 \cmd{DynamicMoveProvider.cs} 处理。该脚本继承自 XR Interaction Toolkit 的 \cmd{ContinuousMoveProvider}，并定义移动方向可以相对于头显或手柄计算。这样在 VR 场景中，用户既可以按照视线方向前进，也可以按照控制器指向进行移动。
 
 \inputminted[firstline=12,lastline=30,firstnumber=12]{csharp}{code/chapter3/DynamicMoveProvider.cs}
 
-脚本在运行时创建一个组合后的 \mintinline{text}|forwardSource|，再根据左右手输入强度混合左右参考姿态，最后调用父类的 \mintinline{csharp}|ComputeDesiredMove| 完成实际位移计算。这一逻辑使森林场景中的移动方向能够根据用户当前的 VR 输入状态动态变化，而不是固定在世界坐标系中。
+脚本在运行时创建一个组合后的 \cmd{forwardSource}，再根据左右手输入强度混合左右参考姿态，最后调用父类的 \cmd{ComputeDesiredMove} 完成实际位移计算。这一逻辑使森林场景中的移动方向能够根据用户当前的 VR 输入状态动态变化，而不是固定在世界坐标系中。
 
 \inputminted[firstline=102,lastline=187,firstnumber=102]{csharp}{code/chapter3/DynamicMoveProvider.cs}
+
+\subsection*{前端页面样式与响应式布局代码}
+\addcontentsline{toc}{subsection}{前端页面样式与响应式布局代码}
+
+浏览器端人脸分析项目的三个页面虽然分别承担表情识别、年龄与性别估计、摄像头实时追踪等不同任务，但它们共享同一套页面样式。样式文件先用 CSS 变量统一背景、边框、文字、强调色、圆角、阴影和容器宽度，使各页面在视觉上保持一致。基础重置部分把图片、视频和画布都设置为块级元素，并限制最大宽度，为后续叠加检测框和关键点提供稳定的显示基础。
+
+\inputminted[firstline=1,lastline=122,firstnumber=1]{css}{code/face-recognition/css/style.css}
+
+导航栏采用固定定位并限制内部宽度，保证用户在不同功能页面之间切换时始终可以看到统一入口。这里的导航并不直接参与人脸识别计算，但它承担了实验页面的组织作用：用户可以在图片识别、属性估计和实时追踪之间切换，而页面主体仍然沿用相同的间距、色彩和内容宽度。
+
+主体工作区通过 \cmd{workspace-grid} 分为控制区与展示区。对于图片类任务，左侧面板负责上传与结果列表，右侧展示区负责图片和覆盖画布；对于摄像头任务，\cmd{webcam-workspace} 使用更固定的左侧栏宽度，把实时视频区域留给右侧大画面。这样的布局使不同任务能够复用同一套 DOM 与 CSS 思路，而不需要为每个功能重新写一套页面框架。
+
+\inputminted[firstline=157,lastline=230,firstnumber=157]{css}{code/face-recognition/css/style.css}
+
+结果卡片部分负责承接模型输出。表情识别会把七类表情概率渲染为进度条，年龄与性别估计会展示年龄、性别和置信度，实时追踪页面也会把当前检测到的人脸状态写入侧边栏。样式中将结果列表、指标行、进度条和状态标签拆成独立类名，使脚本可以只负责生成结构化 HTML，而无需在 JavaScript 中硬编码大量视觉细节。
+
+\inputminted[firstline=294,lastline=376,firstnumber=294]{css}{code/face-recognition/css/style.css}
+
+图片与视频展示区是人脸分析页面最关键的视觉容器。\cmd{analysis-stage} 用于静态图片任务，内部图片按原比例显示，覆盖画布绝对定位在图片上方；\cmd{tracking-stage} 用于摄像头任务，视频元素占满容器，画布同样以绝对定位叠加在视频之上。脚本只需要保证画布尺寸与媒体尺寸一致，CSS 则保证叠加层不会破坏布局。
+
+\inputminted[firstline=411,lastline=505,firstnumber=411]{css}{code/face-recognition/css/style.css}
+
+移动端媒体查询保证页面在窄屏下仍然可用。当视口宽度不足时，双栏布局会退化为单栏，展示区域优先显示，结果与控制面板移动到下方；同时图片和视频舞台的高度被压缩到更适合移动端浏览的范围。虽然本实验主要在桌面浏览器中运行，但这一部分说明页面结构并不只依赖固定宽度屏幕。
+
+\inputminted[firstline=535,lastline=624,firstnumber=535]{css}{code/face-recognition/css/style.css}
+
+\subsection*{XR 输入动作配置代码}
+\addcontentsline{toc}{subsection}{XR 输入动作配置代码}
+
+Unity 森林 VR 场景中的移动输入并不是直接写在脚本的键盘事件或手柄事件中，而是由 Input System 的 \cmd{.inputactions} 资源统一描述。动作配置文件把“左手移动”“右手移动”“传送模式”“连续移动”“连续转向”“瞬间转向”等抽象动作与 XR 控制器的摇杆、握持键和主按钮绑定起来，再由脚本通过 \cmd{InputActionReference} 引用。
+
+左手移动动作图包含 \cmd{Teleport Mode}、\cmd{Teleport Mode Cancel}、\cmd{Turn}、\cmd{Snap Turn}、\cmd{Move} 和 \cmd{Grab Move}。其中 \cmd{Move} 绑定到左手控制器的 \cmd{Primary2DAxis}，并使用 \cmd{StickDeadzone} 处理摇杆死区；传送和转向则通过 \cmd{Sector} 交互把二维摇杆方向解释为不同动作。
+
+\inputminted[firstline=1292,lastline=1417,firstnumber=1292]{json}{code/chapter3/XRI Default Input Actions.inputactions}
+
+右手移动动作图与左手类似，但额外保留了 \cmd{Jump} 动作。两个手柄动作图结构相近的好处是，场景可以同时支持左手和右手输入，移动脚本也可以根据两侧输入强度混合移动方向。右手 \cmd{Move} 同样绑定到 \cmd{Primary2DAxis}，说明连续移动的核心输入仍然来自控制器摇杆。
+
+\inputminted[firstline=2385,lastline=2530,firstnumber=2385]{json}{code/chapter3/XRI Default Input Actions.inputactions}
+
+输入动作文件还包含专门的 UI 动作图。VR 场景中，用户既可能通过射线与菜单或按钮交互，也可能同时触发移动或转向输入。把 UI 输入独立成动作图后，\cmd{ControllerInputActionManager.cs} 就可以根据当前是否悬停在可滚动 UI 上，临时启用或禁用 UI 滚动输入，避免 UI 操作和移动操作互相抢占同一摇杆。
+
+\inputminted[firstline=2533,lastline=2665,firstnumber=2533]{json}{code/chapter3/XRI Default Input Actions.inputactions}
+
+\subsection*{XR 输入事件注册与传送切换代码}
+\addcontentsline{toc}{subsection}{XR 输入事件注册与传送切换代码}
+
+\cmd{ControllerInputActionManager.cs} 的核心职责是把输入动作、射线交互器、近远交互器、传送交互器和 UI 交互状态协调起来。脚本启用时会注册事件，禁用时对应注销事件，这样可以避免组件反复启用后重复订阅同一个回调，也避免对象销毁后仍然响应输入。
+
+事件注册部分把 \cmd{Teleport Mode} 的 \cmd{performed} 和 \cmd{canceled} 分别绑定到传送开始、传送取消、移动开始和移动停止回调；连续移动、连续转向、瞬间转向也会在 \cmd{started} 与 \cmd{canceled} 时更新移动占用状态。这说明脚本并不是简单地读取一次输入值，而是在交互生命周期中持续维护“当前是否有移动类输入正在使用控制权”。
+
+\inputminted[firstline=141,lastline=249,firstnumber=141]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+传送开始时，脚本会启用传送射线并关闭普通远距离射线，避免用户在瞄准传送点时同时触发物体操作。传送取消时，脚本不会立即关闭传送交互器，而是把 \cmd{m_PostponedDeactivateTeleport} 置为真，等待本帧交互事件处理完成后再关闭。这种延迟处理可以给传送交互器留出执行传送的机会。
+
+\inputminted[firstline=250,lastline=282,firstnumber=250]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+移动开始和停止回调使用 \cmd{HashSet<InputAction>} 记录当前占用移动系统的动作。这样做比单个布尔值更稳，因为移动、转向、传送等动作可能在时间上有重叠。只有当集合为空时，脚本才认为移动输入完全结束，并允许在悬停可滚动 UI 时重新切换到 UI 滚动输入。
+
+\inputminted[firstline=283,lastline=296,firstnumber=283]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+\subsection*{XR 近远交互与 UI 输入冲突处理代码}
+\addcontentsline{toc}{subsection}{XR 近远交互与 UI 输入冲突处理代码}
+
+VR 场景中，控制器摇杆和射线不仅用于移动，也可能用于抓取、远距离选择、近距离操作和 UI 滚动。如果这些行为同时启用，用户很容易在想操作物体时触发移动，或者在想滚动 UI 时触发转向。因此脚本根据近远交互区域、射线选择状态和 UI 悬停状态动态启停移动输入。
+
+当 \cmd{NearFarInteractor} 进入远距离区域时，如果当前交互需要操作附着点，脚本会禁用所有移动动作；如果不需要操作附着点，则只禁用传送动作。当进入近距离区域时，脚本会检查摇杆是否仍有输入，必要时延迟恢复移动，避免用户从远距离区域切换到近距离区域时立即触发一次不期望的瞬间转向。
+
+\inputminted[firstline=299,lastline=344,firstnumber=299]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+普通射线选择和 UI 悬停也会影响移动动作。若射线正在执行可操作的选择，移动和转向会被禁用；若控制器悬停在可滚动 UI 上，并且当前没有移动动作占用输入，则脚本会禁用移动动作并启用 UI 滚动。离开 UI 后，再恢复移动动作。这一策略让同一套控制器输入可以在“移动”“操作物体”“滚动 UI”之间切换。
+
+\inputminted[firstline=345,lastline=382,firstnumber=345]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+\subsection*{XR 输入管理生命周期与工具函数代码}
+\addcontentsline{toc}{subsection}{XR 输入管理生命周期与工具函数代码}
+
+脚本生命周期部分负责把事件注册、初始动作状态和逐帧延迟处理串起来。组件启用时会检查是否同时配置了 \cmd{Ray Interactor} 和 \cmd{Near-Far Interactor}，避免两套远距离交互器同时工作；\cmd{Start} 阶段再刷新动作状态，是因为项目中的 \cmd{InputActionManager} 可能会先在启用阶段统一启用动作，脚本需要等这些初始化完成后再按移动模式进行筛选。
+
+\inputminted[firstline=385,lastline=421,firstnumber=385]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+\cmd{Update} 中处理两类延迟状态：其一是传送取消后的射线关闭，其二是近距离交互区域中等待摇杆释放后恢复移动。前者保证传送动作有机会完成，后者避免用户在切换交互区域时因为摇杆仍然偏移而误触发转向或移动。
+
+\inputminted[firstline=422,lastline=456,firstnumber=422]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+动作启停工具函数把高层移动模式转换成具体输入动作的启用状态。连续移动开启时启用 \cmd{Move} 并关闭传送；连续移动关闭时启用传送，并在连续转向和瞬间转向之间二选一。底层的 \cmd{EnableAction}、\cmd{DisableAction} 和 \cmd{GetInputAction} 统一处理空引用，使场景缺少某个动作引用时不会直接抛出异常。
+
+\inputminted[firstline=458,lastline=530,firstnumber=458]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+\subsection*{DynamicMoveProvider 移动方向配置代码}
+\addcontentsline{toc}{subsection}{DynamicMoveProvider 移动方向配置代码}
+
+\cmd{DynamicMoveProvider.cs} 除了在 \cmd{ComputeDesiredMove} 中计算移动方向，还提供了头显、左手控制器、右手控制器三个参考变换，以及左右手各自的移动方向模式。用户可以把某只手配置为头显相对移动，也可以配置为手柄相对移动。这样同一个移动脚本可以适配不同 VR 交互习惯。
+
+\inputminted[firstline=32,lastline=100,firstnumber=32]{csharp}{code/chapter3/DynamicMoveProvider.cs}
+
+\cmd{Awake} 阶段创建的 \cmd{m_CombinedTransform} 是连续移动方向计算的中间对象。脚本并没有直接修改 XR Origin 的相机或手柄变换，而是创建一个组合参考源，将它赋给父类的 \cmd{forwardSource}。后续每帧根据左右手输入强度更新这个参考源，再交给 XR Interaction Toolkit 原有的连续移动算法处理实际位移。
+
+\subsection*{Unity 项目修复与依赖记录}
+\addcontentsline{toc}{subsection}{Unity 项目修复与依赖记录}
+
+除了源码本身，实验过程中还需要记录 Unity 版本、渲染管线、资源包兼容性和 XR Rig 接入方式。下面摘录的过程记录说明了为什么森林资源包导入后会出现粉色材质，以及为什么最终选择在 Unity 6 + URP 项目中修复 Shader，而不是把项目降级到旧版本 Unity。
+
+\inputminted[firstline=1,lastline=75,firstnumber=1]{text}{code/chapter3/change.md}
+
+将 VR 视角接入森林场景时，并不是只复制一个普通 Camera，而是复制完整的 \cmd{XR Origin Hands (XR Rig)}。这样可以保留主相机、Camera Offset、手部控制器、输入动作、交互组件和移动组件。如果只复制相机，用户虽然能看到森林场景，但无法获得完整的 VR 输入和移动能力。
+
+\inputminted[firstline=76,lastline=149,firstnumber=76]{text}{code/chapter3/change.md}
+
+下面的依赖分析把森林场景、XR Origin 预制体、Input Actions、输入管理脚本、移动脚本和 XR Interaction Toolkit 运行时联系起来。它说明第三章中的森林场景只是环境载体，真正决定“能否在 VR 中移动和交互”的，是 XR Origin 与输入系统的组合。
+
+\inputminted[firstline=1,lastline=68,firstnumber=1]{text}{code/chapter3/xr_locomotion_dependency.md}
+
+依赖记录还列出了报告中最值得展示的几个代码位置：输入动作引用、移动模式切换逻辑和连续移动方向计算。它们分别对应本附录中的 \cmd{ControllerInputActionManager.cs}、\cmd{XRI Default Input Actions.inputactions} 和 \cmd{DynamicMoveProvider.cs}，也与正文中关于森林场景移动来源的分析互相印证。
+
+\inputminted[firstline=70,lastline=197,firstnumber=70]{text}{code/chapter3/xr_locomotion_dependency.md}
