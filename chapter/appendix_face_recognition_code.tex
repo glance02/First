@@ -138,3 +138,22 @@ mini-batch 采样函数继续从每个身份下随机选择图片，并生成与
 第三章中森林资源包导入 Unity 6 + URP 项目后出现大面积粉色材质，核心原因是原资源包自带的 \mintinline{text}|StandardNoCulling.shader| 使用旧 Built-in Render Pipeline 的 Surface Shader 写法，无法在 URP 中正常渲染。本节收录修改后的 Shader 文件。该文件将原 Shader 改写为 URP 可用的 HLSL 实现，并保留双面渲染、透明裁剪、基础贴图、颜色、光滑度和阴影投射等植被材质所需功能。
 
 \inputminted{text}{code/chapter3/StandardNoCulling.shader}
+
+\subsection*{Unity VR 移动系统关键代码}
+\addcontentsline{toc}{subsection}{Unity VR 移动系统关键代码}
+
+第三章中的森林场景移动能力并非来自森林资源包本身，而是来自 Unity VR 模板和 XR Interaction Toolkit。移动输入由 \mintinline{text}|XRI Default Input Actions.inputactions| 定义，再由 \mintinline{text}|ControllerInputActionManager.cs| 管理连续移动、传送移动、连续转向、瞬间转向和 UI 滚动等输入动作。下面代码片段展示了脚本中保存的输入动作引用和移动模式开关。
+
+\inputminted[firstline=51,lastline=83,firstnumber=51]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+当移动模式发生变化时，脚本通过 \mintinline{csharp}|UpdateLocomotionActions| 启用或禁用对应输入动作。若启用连续移动，则使用 \mintinline{text}|Move|；若关闭连续移动，则启用 \mintinline{text}|Teleport Mode| 和 \mintinline{text}|Teleport Mode Cancel|，从而进入传送移动方式。转向方式也在连续转向和瞬间转向之间切换。
+
+\inputminted[firstline=458,lastline=468,firstnumber=458]{csharp}{code/chapter3/ControllerInputActionManager.cs}
+
+连续移动方向由 \mintinline{text}|DynamicMoveProvider.cs| 处理。该脚本继承自 XR Interaction Toolkit 的 \mintinline{csharp}|ContinuousMoveProvider|，并定义移动方向可以相对于头显或手柄计算。这样在 VR 场景中，用户既可以按照视线方向前进，也可以按照控制器指向进行移动。
+
+\inputminted[firstline=12,lastline=30,firstnumber=12]{csharp}{code/chapter3/DynamicMoveProvider.cs}
+
+脚本在运行时创建一个组合后的 \mintinline{text}|forwardSource|，再根据左右手输入强度混合左右参考姿态，最后调用父类的 \mintinline{csharp}|ComputeDesiredMove| 完成实际位移计算。这一逻辑使森林场景中的移动方向能够根据用户当前的 VR 输入状态动态变化，而不是固定在世界坐标系中。
+
+\inputminted[firstline=102,lastline=187,firstnumber=102]{csharp}{code/chapter3/DynamicMoveProvider.cs}
