@@ -5,7 +5,7 @@
 
 - `main.tex`：文档入口，只负责引入 `reportstyle.sty`、设置报告标题、组织摘要/目录/正文/参考文献/附录等章节文件，不在这里堆正文内容。
 - `reportstyle.sty`：通用课程报告样式包，封装页面、行距、页眉页脚、标题、图表、列表、超链接、代码块、提示框、摘要和关键词等格式。
-- `chapter/`：正文内容目录。摘要、绪论、正文主体、结论、附录等都放在这里，并由 `main.tex` 用 `\input{chapter/...}` 引入。
+- `chapter/`：正文内容文件。摘要、绪论、正文、结论、附录等都放在这里，并由 `main.tex` 用 `\input{chapter/...}` 引入。
 - `references.bib`：BibTeX 参考文献数据库，放在仓库根目录，由 `main.tex` 中的 `\bibliography{references}` 引入。
 - `Img/`：报告图片资源目录，正文中用相对路径引用。
 - `template.md`：课程报告撰写规范的文本参考。
