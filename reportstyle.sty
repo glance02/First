@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{qutamn}[2026/05/22 Qutamn Report Theme]
+\ProvidesPackage{reportstyle}[2026/05/22 General Report Style]
 
 % ========== 页面布局 ==========
 \RequirePackage[
@@ -17,7 +17,6 @@
 
 % ========== 颜色定义 ==========
 \RequirePackage{xcolor}
-% 原始配色
 \definecolor{ReportBlue}{HTML}{1F4E79}       % 主色调：深蓝（标题、链接、框线）
 \definecolor{ReportLightBlue}{HTML}{EAF2F8}  % 浅蓝（说明框背景）
 \definecolor{ReportGray}{HTML}{F5F7FA}       % 浅灰（代码块背景）
@@ -49,9 +48,10 @@
 \RequirePackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}                              % 清空默认页眉页脚
-\newcommand{\reporttitle}{量子计算课程报告}  % 报告标题（页眉用）
+\newcommand{\ReportTitleText}{课程报告}       % 报告标题默认值（页眉用）
+\newcommand{\reporttitle}[1]{\renewcommand{\ReportTitleText}{#1}}
 \renewcommand{\sectionmark}[1]{\markboth{#1}{}}  % 将节标题写入左标记
-\fancyhead[L]{\small \reporttitle}      % 左页眉：报告标题
+\fancyhead[L]{\small \ReportTitleText}  % 左页眉：报告标题
 \fancyhead[R]{\small \leftmark}         % 右页眉：当前节标题
 \fancyfoot[C]{\small \thepage}          % 页脚居中：页码
 \renewcommand{\headrulewidth}{0.4pt}    % 页眉线粗细
@@ -170,3 +170,26 @@
 
 % ========== 行内命令样式 ==========
 \newcommand{\cmd}[1]{\texttt{\color{ReportBlue}#1}}  % 行内代码/命令，蓝色等宽字体
+
+% ========== 摘要与关键词 ==========
+\newenvironment{abstractcn}{
+  \section*{摘要}
+  \addcontentsline{toc}{section}{摘要}
+}{
+  \clearpage
+}
+
+\newcommand{\keywords}[1]{
+  \par\noindent\textbf{关键词：}#1
+}
+
+\newenvironment{abstracten}{
+  \section*{Abstract}
+  \addcontentsline{toc}{section}{Abstract}
+}{
+  \clearpage
+}
+
+\newcommand{\enkeywords}[1]{
+  \par\noindent\textbf{Keywords: }#1
+}

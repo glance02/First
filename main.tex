@@ -1,28 +1,27 @@
 \documentclass[UTF8,a4paper,12pt]{ctexart}
-\usepackage{qutamn}
+\usepackage{reportstyle}
+
+\reporttitle{课程报告}
 
 \begin{document}
 
 \pagenumbering{gobble}
+\input{chapter/abstract}
+
 \tableofcontents
 \clearpage
 \pagenumbering{arabic}
 
-\input{chapter/introduction}
+\input{chapter/intro}
 \newpage
 
-\input{chapter/experiment}
-\newpage
-
-\input{chapter/results}
-\newpage
-
-\input{chapter/analysis}
+\input{chapter/body}
 \newpage
 
 \input{chapter/conclusion}
 \newpage
 
+\nocite{*}
 \bibliographystyle{plain}
 \bibliography{references}
 
