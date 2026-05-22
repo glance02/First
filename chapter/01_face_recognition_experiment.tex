@@ -2,11 +2,11 @@
 
 \subsection{实验定位与内容概述}
 
-本章分析的是一个基于 \cmd{face-api.js} 的浏览器端人脸分析开源项目。该项目代码托管在 \cmd{git@github.com:glance02/face-recognition.git}，是在 \cmd{willtrinh/face-recognition.git} 项目基础上 fork 并修改得到的实验版本。项目以 HTML、CSS 和 JavaScript 静态资源为主体，通过 \cmd{face-api.js}\cite{faceapi} 在浏览器中加载预训练模型，并在本地完成图片表情识别、图片年龄与性别估计以及摄像头实时人脸追踪。它的重点不是训练新的神经网络，而是观察一个已经训练好的模型体系如何被前端页面组织、加载、调用和展示。
+本章分析的是一个基于 \cmd{face-api.js} 的浏览器端人脸分析开源项目。我们小组的这个项目代码托管在我的 github 仓库 \cmd{git@github.com:glance02/face-recognition.git} 上。这个仓库是在 \cmd{willtrinh/face-recognition.git} 项目基础上 fork 并修改得到的实验版本。项目以 HTML、CSS 和 JavaScript 静态资源为主体，通过 \cmd{face-api.js}\cite{faceapi} 在浏览器中加载预训练模型，并在本地完成图片表情识别、图片年龄与性别估计以及摄像头实时人脸追踪。它的重点不是训练新的神经网络，而是观察一个已经训练好的模型体系如何被前端页面组织、加载、调用和展示。
 
 页面中的 \cmd{models/} 目录保存了实验所需的预训练权重，\cmd{public/} 目录提供示例图片、人物参考图片和演示视频等资源。运行时，浏览器脚本先加载模型文件，再把用户上传的图片或摄像头视频帧送入模型，最后将检测框、关键点、表情类别、年龄和性别估计等结果绘制到页面上。整个过程体现了前端页面如何把输入采集、模型推理和结果可视化连接成一个完整的人脸分析流程。
 
-人脸分析是计算机视觉在人机交互、身份认证、内容理解和智能终端中的典型任务。传统系统常把模型部署在服务器端，客户端只负责采集图像、上传数据和显示结果。这种方式便于集中管理模型，但会带来网络依赖、数据传输、服务部署和延迟控制等问题。随着 TensorFlow.js 等前端推理框架的发展，浏览器不仅能显示页面，也能成为模型推理运行环境。对于课程实验而言，这种部署方式具有明显优势：运行入口直观、依赖环境轻、实验过程容易展示，也便于在报告中把“页面结构”和“识别流程”对应起来分析。
+人脸分析是计算机视觉在人机交互、身份认证、内容理解和智能终端中的典型任务。传统系统常把模型部署在服务器端，客户端只负责采集图像、上传数据和显示结果。这种方式便于集中管理模型，但会带来网络依赖、数据传输、服务部署和延迟控制等问题。随着 TensorFlow.js 等前端推理框架的发展，浏览器不仅能显示页面，也能成为模型推理运行环境。这种部署方式具有明显优势：运行入口直观、依赖环境轻、实验过程容易展示，也便于把“页面结构”和“识别流程”对应起来分析。
 
 本实验选择三个页面作为观察对象：\cmd{face_expression_recognition.html} 用于图片表情识别，\cmd{age_gender_estimation.html} 用于年龄与性别估计，\cmd{webcam_face_tracking.html} 用于摄像头实时追踪。三个页面共享同一个模型目录和前端资源目录，但各自加载不同业务脚本。通过对它们进行对比，可以看出浏览器端人脸分析系统的一般流程：先加载模型，再取得输入，再执行模型推理，最后把检测框、关键点、表情或属性结果渲染到界面上。
 
@@ -34,16 +34,16 @@
     \toprule
     \textbf{页面文件} & \textbf{业务脚本} & \textbf{主要功能} \\
     \midrule
-    \texttt{\detokenize{face_expression_recognition.html}} &
-    \texttt{\detokenize{dist/expression_script.js}} &
+    \path{face_expression_recognition.html} &
+    \path{dist/expression_script.js} &
     图片表情识别 \\
     \addlinespace[2pt]
-    \texttt{\detokenize{age_gender_estimation.html}} &
-    \texttt{\detokenize{dist/estimation_script.js}} &
+    \path{age_gender_estimation.html} &
+    \path{dist/estimation_script.js} &
     年龄与性别估计 \\
     \addlinespace[2pt]
-    \texttt{\detokenize{webcam_face_tracking.html}} &
-    \texttt{\detokenize{dist/webcam_script.js}} &
+    \path{webcam_face_tracking.html} &
+    \path{dist/webcam_script.js} &
     摄像头实时追踪 \\
     \bottomrule
   \end{tabularx}

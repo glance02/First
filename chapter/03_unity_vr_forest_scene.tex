@@ -4,13 +4,15 @@
 
 本章围绕 Unity 中森林虚拟现实场景的构建过程展开。与前两章侧重人脸识别算法和浏览器端推理不同，本章的重点转向三维场景资源的导入、渲染管线兼容性处理、VR 视角接入、移动方式配置以及场景细节丰富。实验目标不是简单打开一个资源包样例场景，而是在 Unity VR 模板项目中完成一个能够正常显示、能够进入、能够移动并具有一定自然环境细节的森林 VR 场景。
 
-本实验的实现过程可以概括为五个阶段。首先，使用 Unity VR 模板创建项目，获得 XR 视角、手部控制器、输入动作和移动组件等基础配置。其次，从 Asset Store 下载森林环境资源，并以 \cmd{Fantasy Forest Environment Free Sample} 的样例场景作为主体环境。再次，处理旧资源包导入 Unity 6 + Universal Render Pipeline 后出现的粉色材质问题，使地形、树木、草地和树叶能够正常渲染。然后，将 VR 模板中的 XR Origin 接入森林场景，并说明连续移动和传送移动的输入管理逻辑。最后，继续导入 \cmd{PolyRonin/Pine Forest Pack} 中的花卉预制体，对场景进行装饰，使最终展示效果更加丰富。
+本实验的实现过程可以概括为七个阶段。首先，使用 Unity VR 模板创建项目，获得 XR 视角、手部控制器、输入动作和移动组件等基础配置。其次，从 Asset Store 下载森林环境资源，并以 \cmd{Fantasy Forest Environment Free Sample} 的样例场景作为主体环境。再次，处理旧资源包导入 Unity 6 + Universal Render Pipeline 后出现的粉色材质问题，使地形、树木、草地和树叶能够正常渲染。然后，将 VR 模板中的 XR Origin 接入森林场景，并说明连续移动和传送移动的输入管理逻辑。接着，继续导入 \cmd{PolyRonin/Pine Forest Pack} 中的花卉预制体，对场景进行装饰。随后，导入 \cmd{Animals FREE - Animated Low Poly 3D Models} 中的动物预制体，进一步丰富森林场景的生态元素。最后，将完成后的森林 VR 场景打包为 Windows 应用程序，并通过运行生成的可执行文件验证场景资源和渲染效果。
 
-在资源选择上，本次实验一共下载了三个 Asset Store 资源包。其中，实际用于场景构建的有两个：\cmd{Fantasy Forest Environment Free Sample} 和 \cmd{PolyRonin/Pine Forest Pack}。第三个资源包为 \cmd{Cosmic_Retro_RecreationRoom_FREE}，由于其风格偏向室内复古休闲空间，与本章森林自然场景的主题不匹配，因此只进行了下载和评估，没有将其中资源加入最终场景。
+在资源选择上，本次实验一共下载了四个 Asset Store 资源包。其中，实际用于场景构建的有三个：\cmd{Fantasy Forest Environment Free Sample}、\cmd{PolyRonin/Pine Forest Pack} 和 \cmd{Animals FREE - Animated Low Poly 3D Models}。\cmd{Cosmic_Retro_RecreationRoom_FREE} 由于风格偏向室内复古休闲空间，与本章森林自然场景的主题不匹配，因此只进行了下载和评估，没有将其中资源加入最终场景。
 
 \subsection{创建 VR 项目与导入主体森林场景}
 
 \subsubsection{创建 Unity VR 模板项目}
+
+配置 Unity 的部分我没有截图留存。大致是要先下载 Unity hub 来作为控制 Unity 版本的工具，然后在 hub 中安装合适的 Unity 版本。另外需要自己配置编写 C# 的编辑器，可以使用 Unity hub 推荐的 Visual Studio，也可以使用其他编辑器,比如 VS code。
 
 实验首先在 Unity Hub 中创建 VR 模板项目。选择 VR 模板的原因在于，该模板已经预先配置了 XR 相关依赖、输入系统、相机结构、手部控制器和基础移动组件。相比普通 3D 模板，VR 模板能够减少 XR Plugin Management、XR Interaction Toolkit 和 Input System 的手动配置工作，使实验重点集中在场景搭建和兼容性处理上。
 

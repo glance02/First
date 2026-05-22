@@ -268,22 +268,3 @@ VR 场景中，控制器摇杆和射线不仅用于移动，也可能用于抓�
 \inputminted[firstline=32,lastline=100,firstnumber=32]{csharp}{code/chapter3/DynamicMoveProvider.cs}
 
 \cmd{Awake} 阶段创建的 \cmd{m_CombinedTransform} 是连续移动方向计算的中间对象。脚本并没有直接修改 XR Origin 的相机或手柄变换，而是创建一个组合参考源，将它赋给父类的 \cmd{forwardSource}。后续每帧根据左右手输入强度更新这个参考源，再交给 XR Interaction Toolkit 原有的连续移动算法处理实际位移。
-
-\subsection*{Unity 项目修复与依赖记录}
-\addcontentsline{toc}{subsection}{Unity 项目修复与依赖记录}
-
-除了源码本身，实验过程中还需要记录 Unity 版本、渲染管线、资源包兼容性和 XR Rig 接入方式。下面摘录的过程记录说明了为什么森林资源包导入后会出现粉色材质，以及为什么最终选择在 Unity 6 + URP 项目中修复 Shader，而不是把项目降级到旧版本 Unity。
-
-\inputminted[firstline=1,lastline=75,firstnumber=1]{text}{code/chapter3/change.md}
-
-将 VR 视角接入森林场景时，并不是只复制一个普通 Camera，而是复制完整的 \cmd{XR Origin Hands (XR Rig)}。这样可以保留主相机、Camera Offset、手部控制器、输入动作、交互组件和移动组件。如果只复制相机，用户虽然能看到森林场景，但无法获得完整的 VR 输入和移动能力。
-
-\inputminted[firstline=76,lastline=149,firstnumber=76]{text}{code/chapter3/change.md}
-
-下面的依赖分析把森林场景、XR Origin 预制体、Input Actions、输入管理脚本、移动脚本和 XR Interaction Toolkit 运行时联系起来。它说明第三章中的森林场景只是环境载体，真正决定“能否在 VR 中移动和交互”的，是 XR Origin 与输入系统的组合。
-
-\inputminted[firstline=1,lastline=68,firstnumber=1]{text}{code/chapter3/xr_locomotion_dependency.md}
-
-依赖记录还列出了报告中最值得展示的几个代码位置：输入动作引用、移动模式切换逻辑和连续移动方向计算。它们分别对应本附录中的 \cmd{ControllerInputActionManager.cs}、\cmd{XRI Default Input Actions.inputactions} 和 \cmd{DynamicMoveProvider.cs}，也与正文中关于森林场景移动来源的分析互相印证。
-
-\inputminted[firstline=70,lastline=197,firstnumber=70]{text}{code/chapter3/xr_locomotion_dependency.md}
