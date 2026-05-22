@@ -1,19 +1,33 @@
-\documentclass{csreport}
-
-\coursename{课程名称}
+\documentclass[UTF8,a4paper,12pt]{ctexart}
+\usepackage{qutamn}
 
 \begin{document}
 
-\input{chapter/00_abstract}
-
-\clearpage
+\pagenumbering{gobble}
 \tableofcontents
+\clearpage
+\pagenumbering{arabic}
 
-\reportbody
+\input{chapter/introduction}
+\newpage
 
-\input{chapter/01_intro}
-\input{chapter/02_body}
-\input{chapter/03_conclusion}
-\input{chapter/references}
+\input{chapter/experiment}
+\newpage
+
+\input{chapter/results}
+\newpage
+
+\input{chapter/analysis}
+\newpage
+
+\input{chapter/conclusion}
+\newpage
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\appendix
+\input{chapter/appendix}
+\newpage
 
 \end{document}

@@ -1,0 +1,172 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{qutamn}[2026/05/22 Qutamn Report Theme]
+
+% ========== 页面布局 ==========
+\RequirePackage[
+  left=2.6cm,        % 左边距
+  right=2.6cm,       % 右边距
+  top=2.8cm,         % 上边距
+  bottom=2.8cm,      % 下边距
+  headheight=15pt    % 页眉高度
+]{geometry}
+\RequirePackage{indentfirst}           % 首段也缩进
+\RequirePackage{setspace}              % 设置行距
+\setstretch{1.5}                      % 1.5 倍行距
+\setlength{\parindent}{2em}           % 段首缩进 2 个汉字宽度
+\setlength{\parskip}{0.25em}          % 段间距
+
+% ========== 颜色定义 ==========
+\RequirePackage{xcolor}
+% 原始配色
+\definecolor{ReportBlue}{HTML}{1F4E79}       % 主色调：深蓝（标题、链接、框线）
+\definecolor{ReportLightBlue}{HTML}{EAF2F8}  % 浅蓝（说明框背景）
+\definecolor{ReportGray}{HTML}{F5F7FA}       % 浅灰（代码块背景）
+\definecolor{ReportDarkGray}{HTML}{4A5568}   % 深灰（实验步骤框线）
+\definecolor{ReportLine}{HTML}{D9E2EC}       % 分割线颜色
+
+
+% ========== 图表、表格与浮动体 ==========
+\RequirePackage{graphicx}            % 插入图片
+\RequirePackage{float}               % 浮动体位置控制（H 选项）
+\RequirePackage{booktabs}            % 专业三线表
+\RequirePackage{caption}             % 图表标题样式
+\captionsetup{
+  font=small,       % 标题字体略小
+  labelfont=bf,     % 标签（图 1/表 1）加粗
+  labelsep=quad     % 标签与文字间距
+}
+
+% ========== 列表环境 ==========
+\RequirePackage{enumitem}
+\setlist{
+  itemsep=0.25em,  % 条目间距
+  topsep=0.4em,    % 列表与上下文间距
+  parsep=0em       % 段落内间距
+}
+\setlist[enumerate]{label=\arabic*.}  % 有序列表用阿拉伯数字
+
+% ========== 页眉与页脚 ==========
+\RequirePackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}                              % 清空默认页眉页脚
+\newcommand{\reporttitle}{量子计算课程报告}  % 报告标题（页眉用）
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}  % 将节标题写入左标记
+\fancyhead[L]{\small \reporttitle}      % 左页眉：报告标题
+\fancyhead[R]{\small \leftmark}         % 右页眉：当前节标题
+\fancyfoot[C]{\small \thepage}          % 页脚居中：页码
+\renewcommand{\headrulewidth}{0.4pt}    % 页眉线粗细
+\renewcommand{\footrulewidth}{0pt}      % 页脚无线
+
+% ========== 章节标题样式 ==========
+\RequirePackage{titlesec}
+% 编号格式：阿拉伯数字
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+% ctex 子标题设置
+\ctexset{
+  subsection = {
+    format = \zihao{4}\heiti,       % 四号黑体
+    beforeskip = 1.1em,             % 标题前间距
+    afterskip = 0.55em              % 标题后间距
+  },
+  subsubsection = {
+    format = \zihao{-4}\heiti,      % 小四号黑体
+    beforeskip = 0.9em,
+    afterskip = 0.4em
+  }
+}
+% 一级标题（section）：三号黑体，编号 + 0.75em 间距
+\titleformat{\section}
+  {\zihao{3}\heiti}
+  {\thesection}
+  {0.75em}
+  {}
+% 无编号一级标题（如目录、参考文献）：居中三号黑体
+\titleformat{name=\section,numberless}
+  {\centering\zihao{3}\heiti}
+  {}
+  {0pt}
+  {}
+\titlespacing*{\section}{0pt}{1.6em}{1.0em}  % section 前后间距
+% 二级标题（subsection）：四号黑体，底部带浅色横线
+\titleformat{\subsection}
+  {\zihao{4}\heiti}
+  {\thesubsection}
+  {0.75em}
+  {}
+  [{\color{ReportLine}\titlerule[0.5pt]}]
+
+% ========== 超链接 ==========
+\RequirePackage[
+  colorlinks=true,        % 链接用彩色文字而非方框
+  linkcolor=ReportBlue,   % 内部链接颜色
+  urlcolor=ReportBlue,    % URL 链接颜色
+  citecolor=ReportBlue    % 引用链接颜色
+]{hyperref}
+
+% ========== 代码块 ==========
+\RequirePackage{fvextra}   % minted 增强（换行等）
+\RequirePackage{minted}    % 代码高亮（需 --shell-escape 编译）
+\setminted{
+  fontsize=\footnotesize,                % 代码字号
+  baselinestretch=1.25,                  % 代码行距
+  linenos,                               % 显示行号
+  numbersep=6pt,                         % 行号与代码间距
+  breaklines,                            % 长行自动换行
+  breakanywhere,                         % 任意位置均可换行
+  autogobble,                            % 自动去除公共前导空白
+  rulecolor=\color{ReportLine},          % 边框线颜色
+  bgcolor=ReportGray,                    % 背景色
+  tabsize=4                              % Tab 宽度
+}
+% C 语言代码块：额外自定义关键字高亮
+\setminted[c]{
+  extrakeywordstype={
+    TsOpKind, TsOperation, TsMessage, TsTransport,
+    TsHistoryEntry, TsDocument, TsProcessStatus, TsProcessResult,
+    TsSendFn, TsPendingOperation, TsClientState, TsAutosaveProcess,
+    TsStringBuilder, TsClientConnection, TsServer,
+    IncomingNode, IncomingQueue, TerminalClient,
+    SentMessages, TestFn
+  },
+  extrakeywordsconstant={
+    TS_MAX_LINE_BYTES, TS_MAX_TYPE, TS_MAX_CLIENT_ID,
+    TS_MAX_OP_ID, TS_MAX_STATUS, TS_MAX_REASON, TS_MAX_UTF8_CHAR,
+    TS_OP_INVALID, TS_OP_INSERT, TS_OP_DELETE, TS_OP_NOOP,
+    TS_PROCESS_OK, TS_PROCESS_ERROR, TS_PROCESS_RESYNC
+  }
+}
+
+% ========== 提示框 ==========
+\RequirePackage[most]{tcolorbox}
+\tcbset{
+  enhanced,          % 增强渲染
+  boxrule=0.6pt,     % 边框粗细
+  arc=2mm,           % 圆角半径
+  left=1em,          % 左边距
+  right=1em,         % 右边距
+  top=0.75em,        % 上边距
+  bottom=0.75em      % 下边距
+}
+
+% 说明框：蓝底蓝框，用于补充说明
+\newtcolorbox{notebox}[1][说明]{
+  title=#1,
+  colback=ReportLightBlue,
+  colframe=ReportBlue,
+  coltitle=white,
+  fonttitle=\bfseries
+}
+
+% 步骤框：白底灰框，用于实验步骤
+\newtcolorbox{stepbox}[1][实验步骤]{
+  title=#1,
+  colback=white,
+  colframe=ReportDarkGray,
+  coltitle=white,
+  fonttitle=\bfseries
+}
+
+% ========== 行内命令样式 ==========
+\newcommand{\cmd}[1]{\texttt{\color{ReportBlue}#1}}  % 行内代码/命令，蓝色等宽字体
