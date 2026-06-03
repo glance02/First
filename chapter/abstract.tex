@@ -1,9 +1,13 @@
-\begin{abstractcn}
-《星际拓荒》（\emph{Outer Wilds}）是一款在游戏设计层面具有高度原创性的太空探索作品。与传统开放世界游戏不同，它几乎完全放弃了对玩家角色的数值强化、任务清单和战斗系统，转而以好奇心为最核心的驱动机制，以知识为唯一的"钥匙"，以碎片化考古式的叙事让玩家主动拼合世界。本文从五个维度系统分析《星际拓荒》的设计逻辑：好奇心驱动的游戏循环如何维持探索动机；以知识为核心的信息锁如何构建交织的解谜网络；树状碎片化叙事如何在没有主角叙事线的情况下完成故事传递；22分钟时间循环如何从技术约束演变为叙事骨架；以及游戏中理性科学模拟与浪漫人文表达如何达成统一。通过这五个角度的分析，本文试图揭示《星际拓荒》为何能成为一种"注定是孤品"的游戏体验：它不以玩家为中心，却让玩家成为世界意义的最终建构者。
-\keywords{星际拓荒；好奇心驱动；信息锁；碎片化叙事；时间循环；游戏设计}
-\end{abstractcn}
+\section{技术约束作为设计语言}
 
-\begin{abstracten}
-\emph{Outer Wilds} is a space exploration game with highly original design. Unlike conventional open-world games, it abandons character progression, quest logs, and combat systems almost entirely. Instead, it adopts curiosity as its core driving mechanism, knowledge as its sole ``key,'' and fragmented archaeological storytelling that allows players to actively piece together the world. This paper analyzes the design logic of \emph{Outer Wilds} from five dimensions: how the curiosity-driven game loop sustains exploration motivation; how knowledge-based information locks construct an interwoven puzzle network; how tree-structured fragmented narrative delivers a story without a protagonist-centered plot; how the 22-minute time loop evolved from a technical constraint into a narrative backbone; and how the game achieves a synthesis of rational scientific simulation and romantic humanistic expression. Through these five perspectives, this paper seeks to reveal why \emph{Outer Wilds} has become a singular experience that resists replication: a game that does not center itself on the player, yet ultimately makes the player the constructor of the world's meaning.
-\enkeywords{Outer Wilds; curiosity-driven design; information lock; fragmented narrative; time loop; game design}
-\end{abstracten}
+\subsection{技术约束作为设计的催化剂}
+
+《星际拓荒》最具标志性的设计——22分钟的时间循环——其诞生过程恰好体现了这款游戏独特的设计哲学。游戏中的整个太阳系基于真实的物理引擎运作：每个星球的公转、引力作用、天体运动都是持续模拟的。这种设计赋予了宇宙一种可感知的"实感"，但也带来了无法回避的问题：天体基于物理进行长时间模拟后，会不可避免地出现轨道误差累积——部分行星的运动轨迹出现错乱，个别星球上依赖物理系统的设计也会被逐渐破坏。随着时间推移，精心构建的太阳系会慢慢"坏掉"。Alex Beachum 采取了一个简单粗暴但极为有效的方案：既然问题出在时间本身，那就定时重置时间。他在游戏中设计了一次周期性的宇宙尺度重置事件——一个固定的时间窗口结束后，世界状态被整体恢复到初始时刻。这样一来，物理模拟被严格限制在可控的时间窗口内，确保系统稳定运行；另一方面，这一重置事件本身就是一场极具视觉冲击力的奇观，天然地激发玩家追问"这个世界到底发生了什么"，成为叙事悬念的核心支撑。
+
+一个为修复物理模拟问题而生的技术方案，最终却成为了游戏最具魅力的设计之一。重置事件如果没有叙事意义，就只是一个暴力的技术手段；但当它与游戏的剧情悬念——挪麦人的秘密、宇宙运作的真相——逐渐对接时，循环本身就成了一个巨大的谜题。玩家每次轮回后重来，不是"游戏失败"的惩罚，而是对世界规律的一次新的认知尝试。制作组将一个工程的"补丁"转化为叙事的"内核"，这恰恰体现了优秀设计常常来自对约束的创造性回应，而非对理想的自由追求。时间循环还深刻改变了玩家的游戏行为模式：在没有时间限制的开放世界中，玩家会习惯性地想要"清空"一个区域再前往下一个，行为趋向保守；而在22分钟的强制循环下，每次轮回都是全新的一次探索机会，玩家被鼓励尝试不同的路径、观察不同时间节点上的环境变化。时间不是惩罚，而是赋予节奏感的组织框架。
+
+微缩宇宙是同一个逻辑的第二个例子。游戏采用微缩比例太阳系的重要原因同样来自技术底层：浮点数精度问题。在虚拟空间中，物体的位置由浮点坐标表示。当坐标值越大时（即物体离世界原点越远），浮点可用的精度位数就越少，物体只能以越来越大的间隔"跳动"移动，产生明显的卡顿异常。制作组发现虚拟空间并非无限，因此采用了小比例微缩宇宙的方式，让所有星球的运动保持在精度允许的平滑范围内。漫天星空也并非远景渲染，而是由围绕在摄像机周围的粒子生成——这些粒子始终跟随玩家位置，确保渲染精度。这些技术层面的约束，没有一个表现为"妥协"——微缩宇宙的可控尺度让玩家能够在一次飞行中从一颗星球抵达另一颗，让"星际旅行"变成了真实而非过场动画的体验；粒子星空的渲染技巧则为天空中动态天文现象的视觉表现提供了天然便利。
+
+这种"将约束转化为设计语言"的思维，也渗透到了游戏世界构建的方方面面。整个太阳系的行星轨道是用物理引擎真实模拟的，每颗星球都被施加了推力与引力来实现公转；深巨星的重力场、引力弹弓效应可以在实际飞行中被感知和利用——玩家真的可以绕着黑洞飞行借力弹射；游戏中那颗运行在椭圆轨道上的彗星，它的公转严格遵循了开普勒定律——近日点速度快，远日点速度慢。这些细节或许有 99\% 的玩家不会注意，但制作组坚持做了出来，因为它们构成了一个令人信服的世界。量子力学的引入更加意味深长：游戏中存在一类"量子物体"，当玩家视线离开它们时，它们会随机出现在任意位置，一旦盯住，量子态便坍缩，物体固定不动。这个机制的灵感直接来源于海森堡不确定性原理，也正是 Alex Beachum 毕业设计课题的核心——"通过电子游戏演示海森堡提出的不确定性原理"。游戏中的量子月球永远只有一面对着它所环绕的星球，就像现实中的月球被地球潮汐锁定——这不是巧合，而是刻意。这些近乎偏执的物理求真，让《星际拓荒》的世界不是像一个平行宇宙，而是真的像一个平行宇宙。你在其中探索时，不会觉得这是游戏开发者在"安排"什么，而是觉得这是自然规律在"运行"什么。
+
+\subsection{理性与浪漫的交汇}
